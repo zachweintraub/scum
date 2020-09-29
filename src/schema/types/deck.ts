@@ -8,15 +8,16 @@ export type Rank = Suit & {
 };
 
 export type Card = {
-  rank: Rank,
-  suit: Suit,
+  fullName: string,
+  alias: string,
+  rank: number,
 };
 
 export class Deck {
 
   private cardCount: number;
 
-  private shuffledCards: Card[];
+  private allCards: Card[] = [];
 
   private suits: Suit[] = [
     {
@@ -109,18 +110,7 @@ export class Deck {
    * Arranges the appropriate number of cards into a shuffled array for dealing.
    */
   constructor(deckCount: number) {
-    
-    // The total number of cards that will be in this deck.
-    let cardsToShuffle = deckCount * 52;
-    this.cardCount = cardsToShuffle;
-
-    // Create an array of indexes to randomly select from.
-    let openIndexes: number[];
-    for (let i = 0; i < cardsToShuffle; i++) {
-      openIndexes.push(i);
-    }
-
-    // Loop over the ranks...
+        // Loop over the ranks...
     for (let i = 0; i < this.ranks.length; i++) {
       const thisRank = this.ranks[i];
       // Within this rank, loop over the suits...
@@ -128,30 +118,39 @@ export class Deck {
         const thisSuit = this.suits[j];
         // This rank + this suit is one card - add once per deck we are using.
         for (let k = 0; k < deckCount; k++) {
-          // Select a random index from the remaining empty indexes.
-          const randomIndex = openIndexes[Math.floor(Math.random() * openIndexes.length)];
-          // Insert this card into the final array at the random index.
-          this.shuffledCards[randomIndex] = {
-            rank: thisRank,
-            suit: thisSuit,
-          };
-          // Remove the index so it cannot be used again.
-          openIndexes.splice(randomIndex, 1);
+          // Add it to the allCards array
+          this.allCards.push({
+            // Set the rank to highest for the three of clubs.
+            rank: thisRank.alias === "3" && thisSuit.alias === "C" ? 13 : thisRank.rank,
+            alias: thisRank.alias + thisSuit.alias,
+            fullName: `${thisRank.name} of ${thisSuit.name}`,
+          });
         }
       }
     }
   }
 
-  public deal(handCount: number): Card[][]  {
+  public shuffleAndDeal(handCount: number): Card[][]  {
 
     // Establish the array of hands to return.
     let hands: Card[][] = [];
 
     // Determine the number of cards to place in each hand.
-    const cardsPerHand = Math.floor(this.cardCount / handCount);
+    const cardsPerHand = Math.floor(this.allCards.length / handCount);
 
+    // Loop over the number of hands to create
     for (let i = 0; i < handCount; i++) {
-      const thisHand = this.shuffledCards.splice(0, cardsPerHand);
+      let thisHand: Card[] = [];
+      // Loop over the number of cards per hand
+      for (let j = 0; j < cardsPerHand; j++) {
+        // Establish a random index
+        const randomIndex = Math.floor(Math.random() * this.allCards.length);
+        // Pull the card at that index
+        const thisCard = this.allCards.splice(randomIndex, 1);
+        // Add it to the current hand being built
+        thisHand.push(...thisCard);
+      }
+      // Add the hand we just built to the array of hands being dealt
       hands.push(thisHand);
     }
 

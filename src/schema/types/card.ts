@@ -1,21 +1,24 @@
-import { GraphQLNonNull, GraphQLObjectType } from "graphql";
+import { GraphQLInt, GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
 import { Card } from "./deck";
-import { GqlRank } from "./rank";
-import { GqlSuit } from "./suit";
 
 export const GqlCard = new GraphQLObjectType<Card, {}>({
   name: "Card",
   description: "A single standard playing card.",
   fields: {
     rank: {
-      type: new GraphQLNonNull(GqlRank),
-      description: "The common name of the card (i.e. Queen)",
+      type: new GraphQLNonNull(GraphQLInt),
+      description: "The numeric value of the card in the context of scum rules",
       resolve: ({ rank }) => rank,
     },
-    suit: {
-      type: new GraphQLNonNull(GqlSuit),
-      description: "The suit of the card (i.e. Hearts)",
-      resolve: ({ suit }) => suit,
+    fullName: {
+      type: new GraphQLNonNull(GraphQLString),
+      description: "The full name of the card (i.e. Queen of Hearts)",
+      resolve: ({ fullName }) => fullName,
     },
-  }
+    alias: {
+      type: new GraphQLNonNull(GraphQLString),
+      description: "The alias of the card (i.e. QH)",
+      resolve: ({ alias }) => alias,
+    },
+  },
 });

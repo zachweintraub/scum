@@ -14,9 +14,12 @@ export const startRound: GraphQLFieldConfig<null, null, args> = {
     deckCount: {
       type: new GraphQLNonNull(GraphQLInt),
     },
+    playerCount: {
+      type: new GraphQLNonNull(GraphQLInt),
+    }
   },
   resolve(src, { deckCount, playerCount }) {
     const deck = new Deck(deckCount);
-    return deck.deal(playerCount);
+    return deck.shuffleAndDeal(playerCount);
   }
 };
