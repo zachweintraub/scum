@@ -15,8 +15,6 @@ export type Card = {
 
 export class Deck {
 
-  private cardCount: number;
-
   private allCards: Card[] = [];
 
   private suits: Suit[] = [
@@ -130,6 +128,9 @@ export class Deck {
     }
   }
 
+  /**
+   * Pass in a number of hands to deal and return an array of randomly selected hands
+   */
   public shuffleAndDeal(handCount: number): Card[][]  {
 
     // Establish the array of hands to return.
