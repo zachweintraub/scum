@@ -7,7 +7,7 @@ export type Rank = Suit & {
   rank: number,
 };
 
-export type Card = {
+type Card = {
   fullName: string,
   alias: string,
   rank: number,

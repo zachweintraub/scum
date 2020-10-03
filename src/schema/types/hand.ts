@@ -1,8 +1,8 @@
 import { GraphQLList, GraphQLNonNull, GraphQLObjectType } from "graphql";
-import { Card } from "./deck";
+import { ScumDb } from "../../services/scumDb";
 import { GqlCard } from "./card";
 
-export const GqlHand = new GraphQLObjectType<Card[], {}>({
+export const GqlHand = new GraphQLObjectType<ScumDb.CardDBO[], {}>({
   name: "Hand",
   description: "The cards in a player's hand",
   fields: {
