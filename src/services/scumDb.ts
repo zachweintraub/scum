@@ -74,7 +74,7 @@ export class ScumDb {
     roundOne.startedAt = startedAt;
     await this.db.collection("games").updateOne(
       { _id: thisGameId },
-      { $push: { rounds: roundOne }, startedAt: startedAt }
+      { $push: { rounds: roundOne }, $set: { startedAt: startedAt } }
     );
     return roundOne;
   }
