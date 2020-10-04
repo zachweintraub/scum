@@ -3,6 +3,7 @@ import { ScumDb } from "../../services/scumDb";
 import { GqlPlayer } from "../types/player";
 import { GraphQlContext } from "../../index";
 import { GraphQLDateTime } from "graphql-iso-date"
+import { GqlGameConfig } from "./gameConfig";
 
 export const GqlGame = new GraphQLObjectType<ScumDb.GameDBO, GraphQlContext>({
   name: "Game",
@@ -39,6 +40,7 @@ export const GqlGame = new GraphQLObjectType<ScumDb.GameDBO, GraphQlContext>({
       async resolve({ _id, playerIds }, _, { scumDb }) {
         try {
           const players = await scumDb.getPlayers(playerIds);
+          
           if (!Array.isArray(players)) {
             throw new Error(`No players found for game ${_id}`);
           }
@@ -49,9 +51,9 @@ export const GqlGame = new GraphQLObjectType<ScumDb.GameDBO, GraphQlContext>({
       },
     },
     gameConfig: {
-      type: new GraphQLNonNull(GraphQLString),
+      type: new GraphQLNonNull(GqlGameConfig),
       description: "The game settings",
-      resolve: ({ gameConfig }) => JSON.stringify(gameConfig),
+      resolve: ({ gameConfig }) => gameConfig,
     },
     createdAt: {
       type: GraphQLDateTime,

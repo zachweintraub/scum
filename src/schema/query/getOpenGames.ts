@@ -11,7 +11,7 @@ export const getOpenGames: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     try {
       return await scumDb.getOpenGames();
     } catch (err) {
-      throw new GraphQLError(`Error fetching players from the DB: ${err}`);
+      throw new GraphQLError(`Error fetching open games from the DB: ${err}`);
     }
   }
 };

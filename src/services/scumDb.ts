@@ -8,11 +8,6 @@ export class ScumDb {
     this.db = db;
   }
 
-  public async checkConnection() {
-    const result = await this.db.collections();
-    console.log(result);
-  }
-
   public async createGame(name: string, hostId: string, gameConfig: ScumDb.GameConfigDBO): Promise<ScumDb.GameDBO> {
     
     const createdAt = new Date().toISOString();
@@ -33,7 +28,7 @@ export class ScumDb {
     const thisGameId = new ObjectID(gameId);
     await this.db.collection("games").updateOne(
       { _id: thisGameId, startedAt: { $exists: false } },
-      { $push: { players: playerId } }  
+      { $push: { playerIds: playerId } }  
     );
     return playerId;
   }
@@ -49,7 +44,7 @@ export class ScumDb {
   }
 
   public async getOpenGames() {
-    const games = this.db.collection("games").find({ startedAt: { $exists: false } }).toArray();
+    const games = await this.db.collection("games").find({ startedAt: { $exists: false } }).toArray();
     return games;
   }
 

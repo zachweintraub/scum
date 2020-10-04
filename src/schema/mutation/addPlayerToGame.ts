@@ -1,8 +1,5 @@
-import { GraphQLBoolean, GraphQLError, GraphQLFieldConfig, GraphQLInt, GraphQLNonNull, GraphQLString } from "graphql";
-import { Deck } from "../types/deck";
+import { GraphQLBoolean, GraphQLError, GraphQLFieldConfig, GraphQLNonNull, GraphQLString } from "graphql";
 import { GraphQlContext } from "../..";
-import { ScumDb } from "../../services/scumDb";
-import { GqlGame } from "../types/game";
 
 type Args = {
   playerId?: string,
@@ -49,11 +46,15 @@ export const addPlayerToGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     }
 
     // Now add the player to the game
-    try {      
+    try {
+      const player = await scumDb.getPlayer(playerId);
+      if (!player) {
+        throw new Error(`No player found with ID ${playerId}`);
+      }      
       await scumDb.addPlayerToGame(gameId, playerId);
       return true;
     } catch (err) {
-      throw new GraphQLError(`Unable to create new user: ${err}`);
+      throw new GraphQLError(`Unable to add player to game: ${err}`);
     }
   }
 };
