@@ -131,7 +131,7 @@ export class Deck {
   /**
    * Pass in a number of hands to deal and return an array of randomly selected hands
    */
-  public shuffleAndDeal(handCount: number): Card[][]  {
+  public shuffleAndDeal(handCount: number): { hands: Card[][], excessCards?: Card[] }  {
 
     // Establish the array of hands to return.
     let hands: Card[][] = [];
@@ -155,7 +155,13 @@ export class Deck {
       hands.push(thisHand);
     }
 
-    return hands;
+    const returnObject: { hands: Card[][], excessCards?: Card[] } = { hands };
+
+    if (this.allCards.length > 0) {
+      returnObject.excessCards = this.allCards
+    }
+
+    return returnObject;
 
   }
 }
