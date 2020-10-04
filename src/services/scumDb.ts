@@ -1,4 +1,4 @@
-import { Db, ObjectID, MongoCallback } from "mongodb";
+import { Db, ObjectID } from "mongodb";
 
 export class ScumDb {
 
@@ -14,17 +14,28 @@ export class ScumDb {
   }
 
   public async createGame(name: string, hostId: string, gameConfig: ScumDb.GameConfigDBO): Promise<ScumDb.GameDBO> {
-  
+    
+    const createdAt = new Date().toISOString();
+
     const thisGame: ScumDb.GameDBO = {
       _id: new ObjectID(),
       name,
       hostId,
       gameConfig,
       playerIds: [hostId],
-      isActive: false,
+      createdAt,
     };
     await this.db.collection("games").insertOne(thisGame);
     return thisGame;
+  }
+
+  public async addPlayerToGame(gameId: string, playerId: string) {
+    const thisGameId = new ObjectID(gameId);
+    await this.db.collection("games").updateOne(
+      { _id: thisGameId, startedAt: { $exists: false } },
+      { $push: { players: playerId } }  
+    );
+    return playerId;
   }
 
   public async createPlayer(name: string) {
@@ -38,7 +49,7 @@ export class ScumDb {
   }
 
   public async getOpenGames() {
-    const games = this.db.collection("games").find({ isActive: false }).toArray();
+    const games = this.db.collection("games").find({ startedAt: { $exists: false } }).toArray();
     return games;
   }
 
@@ -70,7 +81,9 @@ export namespace ScumDb {
     hostId: string,
     playerIds: string[],
     gameConfig: GameConfigDBO,
-    isActive: boolean,
+    createdAt?: string;
+    startedAt?: string;
+    endedAt?: string;
   };
 
   export type PlayerDBO = {

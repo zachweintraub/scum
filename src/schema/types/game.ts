@@ -1,8 +1,8 @@
-import { GraphQLBoolean, GraphQLError, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
+import { GraphQLError, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
 import { ScumDb } from "../../services/scumDb";
 import { GqlPlayer } from "../types/player";
 import { GraphQlContext } from "../../index";
-import { resolve } from "path";
+import { GraphQLDateTime } from "graphql-iso-date"
 
 export const GqlGame = new GraphQLObjectType<ScumDb.GameDBO, GraphQlContext>({
   name: "Game",
@@ -53,10 +53,20 @@ export const GqlGame = new GraphQLObjectType<ScumDb.GameDBO, GraphQlContext>({
       description: "The game settings",
       resolve: ({ gameConfig }) => JSON.stringify(gameConfig),
     },
-    isActive: {
-      type: new GraphQLNonNull(GraphQLBoolean),
-      description: "Whether or not the game has already started",
-      resolve: ({ isActive }) => !!isActive,
+    createdAt: {
+      type: GraphQLDateTime,
+      description: "The time at which the game was created.",
+      resolve: ({ createdAt }) => createdAt,
+    },
+    startedAt: {
+      type: GraphQLDateTime,
+      description: "The time at which the game started.",
+      resolve: ({ startedAt }) => startedAt,
+    },
+    endedAt: {
+      type: GraphQLDateTime,
+      description: "The time at which the game ended.",
+      resolve: ({ endedAt }) => endedAt,
     },
   },
 });
