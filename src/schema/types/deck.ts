@@ -15,7 +15,7 @@ type Card = {
 
 export class Deck {
 
-  private allCards: Card[] = [];
+  public allCards: Card[] = [];
 
   private suits: Suit[] = [
     {
@@ -107,7 +107,7 @@ export class Deck {
    * Pass in number of standard decks to play with.
    * Arranges the appropriate number of cards into a shuffled array for dealing.
    */
-  constructor(deckCount: number) {
+  constructor(deckCount: number = 1) {
         // Loop over the ranks...
     for (let i = 0; i < this.ranks.length; i++) {
       const thisRank = this.ranks[i];
@@ -119,7 +119,7 @@ export class Deck {
           // Add it to the allCards array
           this.allCards.push({
             // Set the rank to highest for the three of clubs.
-            rank: thisRank.alias === "3" && thisSuit.alias === "C" ? 13 : thisRank.rank,
+            rank: thisRank.rank,
             alias: thisRank.alias + thisSuit.alias,
             fullName: `${thisRank.name} of ${thisSuit.name}`,
           });

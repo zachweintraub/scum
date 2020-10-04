@@ -2,12 +2,12 @@ import { GraphQLFieldConfig, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObj
 import { GqlHand } from "../types/hand";
 import { Deck } from "../types/deck";
 
-type args = {
+type Args = {
   deckCount: number,
   playerCount: number, 
 };
 
-export const startRound: GraphQLFieldConfig<null, null, args> = {
+export const startRound: GraphQLFieldConfig<null, null, Args> = {
   type: new GraphQLNonNull(new GraphQLList(GqlHand)),
   description: "Creates a new round by shuffling the appropriate number of cards into the desired number of hands",
   args: {

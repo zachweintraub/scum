@@ -1,4 +1,6 @@
 import { GraphQLObjectType, GraphQLString } from "graphql";
+import { getPlayers } from "./getPlayers";
+import { getOpenGames } from "./getOpenGames";
 
 export const query = new GraphQLObjectType<null, null>({
   name: "Query",
@@ -11,5 +13,7 @@ export const query = new GraphQLObjectType<null, null>({
         return "Hello world!";
       },
     },
+    players: getPlayers,
+    openGames: getOpenGames,
   },
 });
