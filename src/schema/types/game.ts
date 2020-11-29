@@ -4,6 +4,8 @@ import { GqlPlayer } from "../types/player";
 import { GraphQlContext } from "../../index";
 import { GraphQLDateTime } from "graphql-iso-date"
 import { GqlGameConfig } from "./gameConfig";
+import { ActionLogItem } from "./actionLogItem";
+import { GqlRound } from "./round";
 
 export const GqlGame = new GraphQLObjectType<ScumDb.GameDBO, GraphQlContext>({
   name: "Game",
@@ -50,10 +52,20 @@ export const GqlGame = new GraphQLObjectType<ScumDb.GameDBO, GraphQlContext>({
         }
       },
     },
+    rounds: {
+      type: new GraphQLList(GqlRound),
+      description: "The rounds of this game",
+      resolve: ({ rounds }) => rounds,
+    },
     gameConfig: {
       type: new GraphQLNonNull(GqlGameConfig),
       description: "The game settings",
       resolve: ({ gameConfig }) => gameConfig,
+    },
+    actionLog: {
+      type: new GraphQLList(ActionLogItem),
+      description: "The game's action and message log",
+      resolve: ({  actionLog }) => actionLog,
     },
     createdAt: {
       type: GraphQLDateTime,

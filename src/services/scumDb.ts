@@ -19,6 +19,8 @@ export class ScumDb {
       gameConfig,
       playerIds: [hostId],
       createdAt,
+      rounds: [],
+      actionLog: [],
     };
     await this.db.collection("games").insertOne(thisGame);
     return thisGame;
@@ -54,16 +56,39 @@ export class ScumDb {
     return games;
   }
 
-  public async getPlayer(id: string) {
+  public async getPlayer(id: string): Promise<ScumDb.PlayerDBO> {
     const thisId = new ObjectID(id);
     const player = await this.db.collection("players").findOne({ _id: thisId });
     return player;
   }
 
-  public async getPlayers(ids: string[]) {
-    const theseIds = ids.map(id => new ObjectID(id));
-    const players = await this.db.collection("players").find({ _id: { $in: theseIds }}).toArray();
+  public async getPlayers(ids: string[]): Promise<ScumDb.PlayerDBO[]> {
+    let players: ScumDb.PlayerDBO[] = [];
+    if (Array.isArray(ids) && ids.length > 0) {
+      const theseIds = ids.map(id => new ObjectID(id));
+      players = await this.db.collection("players").find({ _id: { $in: theseIds }}).toArray();
+    } else {
+      players = await this.db.collection("players").find().toArray();
+    }
     return players;
+  }
+
+  public async logAction(gameId: string, message: string): Promise<boolean> {
+    if (!gameId || !message) {
+      throw new Error("Cannot log an action without both a game ID and a message")
+    }
+    const thisGameId = new ObjectID(gameId);
+    // Create a new action containing the message
+    const action: ScumDb.ActionLogItemDBO = {
+      message,
+      time: new Date(),
+    };
+    // Add this action to the game's log
+    await this.db.collection("games").updateOne(
+      { _id: thisGameId },
+      { $push: { actionLog: action } }
+    );
+    return true;
   }
 
   public async startGame(gameId: string, roundOne: Partial<ScumDb.RoundDBO>) {
@@ -76,11 +101,28 @@ export class ScumDb {
       { _id: thisGameId },
       { $push: { rounds: roundOne }, $set: { startedAt: startedAt } }
     );
+    await this.db.collection("rounds").insertOne(roundOne);
     return roundOne;
+  }
+
+  public async updateRound(gameId: string, round: ScumDb.RoundDBO): Promise<boolean> {
+    const thisGameId = new ObjectID(gameId);
+    const thisRoundId = round._id;
+    await this.db.collection("games").updateOne(
+      { _id: thisGameId, },
+      { $set: { "rounds.$[element]": round } },
+      { arrayFilters: [{ "element": { _id: thisRoundId } }] }
+    );
+    return true;
   }
 }
 
 export namespace ScumDb {
+
+  export type ActionLogItemDBO = {
+    time: Date;
+    message: string;
+  };
 
   export type GameConfigDBO = {
     deckCount: number,
@@ -98,6 +140,8 @@ export namespace ScumDb {
     createdAt?: string;
     startedAt?: string;
     endedAt?: string;
+    rounds: RoundDBO[];
+    actionLog: ActionLogItemDBO[];
   };
 
   export type PlayerDBO = {
@@ -116,12 +160,15 @@ export namespace ScumDb {
     cards: CardDBO[],
     startRank?: number,
     endRank?: number,
+    isActive: boolean,
+    hasPassed: boolean,
   };
 
   export type RoundDBO = {
     _id: ObjectID,
     hands: HandDBO[],
-    pile?: TurnDBO[],
+    activePile: TurnDBO[],
+    discardPile: TurnDBO[],
     excessCards?: CardDBO[],
     startedAt?: string,
     endedAt?: string,
@@ -131,5 +178,6 @@ export namespace ScumDb {
     cards: CardDBO[],
     playedAt: Date,
     playerId: ObjectID,
+    tookThePile?: boolean,
   }
 }

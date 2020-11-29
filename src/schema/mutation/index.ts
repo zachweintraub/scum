@@ -1,9 +1,11 @@
 import { GraphQLObjectType } from "graphql";
-import { startRound } from "./startRound";
+import { startNewRound } from "./startNewRound";
 import { createPlayer } from "./createPlayer";
 import { createGame } from "./createGame";
 import { startGame } from "./startGame";
 import { addPlayerToGame } from "./addPlayerToGame";
+import {  logMessage } from "./logAction";
+import { playTurn } from "./playTurn";
 
 export const mutation = new GraphQLObjectType<null, null>({
   name: "Mutation",
@@ -13,6 +15,8 @@ export const mutation = new GraphQLObjectType<null, null>({
     createPlayer,
     createGame,
     startGame,
-    startRound,
+    startRound: startNewRound,
+    logAction: logMessage,
+    playTurn,
   },
 });

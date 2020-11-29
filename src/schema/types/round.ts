@@ -1,5 +1,5 @@
 import { GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
-import { GraqphQLDateTime } from "graphql-iso-date";
+// import { GraqphQLDateTime } from "graphql-iso-date";
 import { ScumDb } from "../../services/scumDb";
 import { GqlCard } from "./card";
 import { GqlHand } from "./hand";
@@ -18,10 +18,15 @@ export const GqlRound = new GraphQLObjectType<ScumDb.RoundDBO, {}>({
       description: "The hands in this round",
       resolve: ({ hands }) => hands,
     },
-    pile: {
-      type: new GraphQLNonNull(new GraphQLList(GraphQLString)),
+    activePile: {
+      type: new GraphQLList(GqlCard),
       description: "The pile of cards being played",
-      resolve: ({ pile }) => pile ?? [],
+      resolve: ({ activePile }) => activePile ?? [],
+    },
+    discardPile: {
+      type: new GraphQLList(GqlCard),
+      description: "The pile of cards already played",
+      resolve: ({ discardPile }) => discardPile ?? [],
     },
     excessCards: {
       type: new GraphQLList(GqlCard),

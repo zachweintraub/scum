@@ -38,12 +38,20 @@ export const startGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
       // Get a new deck for this game and deal it out into hands
       const deck = new Deck(game.gameConfig.deckCount);
       const { hands, excessCards } = deck.shuffleAndDeal(game.playerIds.length);
-      const newRound: Omit<ScumDb.RoundDBO, "_id"> = { hands: [] };
+      const newRound: Omit<ScumDb.RoundDBO, "_id"> = {
+        hands: [],
+        discardPile: [],
+        activePile: [],
+      };
       // Loop over the players and give them a hand
       for (let i = 0; i < playerIds.length; i++) {
+        const cards = hands[i];
+        const isFirst = !!cards.find(c => c.alias === "3S");
         newRound.hands.push({
           playerId: playerIds[i],
-          cards: hands[i],
+          cards,
+          isActive: isFirst,
+          hasPassed: false,
         });
       }
       // Add the excess cards if they exist
