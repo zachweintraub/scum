@@ -19,7 +19,6 @@ export class ScumDb {
       gameConfig,
       playerIds: [hostId],
       createdAt,
-      rounds: [],
       actionLog: [],
     };
     await this.db.collection("games").insertOne(thisGame);
@@ -43,6 +42,14 @@ export class ScumDb {
     };
     await this.db.collection("players").insertOne(thisPlayer);
     return thisPlayer;
+  }
+
+  public async createRound(gameId: string, round: ScumDb.RoundDBO): Promise<boolean> {
+    const thisGameId = new ObjectID(gameId);
+    round._id = new ObjectID();
+
+    await this.db.collection("rounds").insertOne(round);
+    return true;
   }
 
   public async getGame(id: string): Promise<ScumDb.GameDBO> {
@@ -73,6 +80,11 @@ export class ScumDb {
     return players;
   }
 
+  public async getRounds(gameId: ObjectID): Promise<ScumDb.RoundDBO[]> {
+    const rounds = await this.db.collection("rounds").find({ gameId: gameId }).toArray();
+    return rounds;
+  }
+
   public async logAction(gameId: string, message: string): Promise<boolean> {
     if (!gameId || !message) {
       throw new Error("Cannot log an action without both a game ID and a message")
@@ -99,20 +111,15 @@ export class ScumDb {
     roundOne.startedAt = startedAt;
     await this.db.collection("games").updateOne(
       { _id: thisGameId },
-      { $push: { rounds: roundOne }, $set: { startedAt: startedAt } }
+      { $set: { startedAt: startedAt } }
     );
     await this.db.collection("rounds").insertOne(roundOne);
     return roundOne;
   }
 
-  public async updateRound(gameId: string, round: ScumDb.RoundDBO): Promise<boolean> {
-    const thisGameId = new ObjectID(gameId);
+  public async updateRound(round: ScumDb.RoundDBO): Promise<boolean> {
     const thisRoundId = round._id;
-    await this.db.collection("games").updateOne(
-      { _id: thisGameId, },
-      { $set: { "rounds.$[element]": round } },
-      { arrayFilters: [{ "element": { _id: thisRoundId } }] }
-    );
+    await this.db.collection("rounds").replaceOne({ _id: thisRoundId }, round);
     return true;
   }
 }
@@ -140,7 +147,6 @@ export namespace ScumDb {
     createdAt?: string;
     startedAt?: string;
     endedAt?: string;
-    rounds: RoundDBO[];
     actionLog: ActionLogItemDBO[];
   };
 
@@ -166,6 +172,7 @@ export namespace ScumDb {
 
   export type RoundDBO = {
     _id: ObjectID,
+    gameId: ObjectID,
     hands: HandDBO[],
     activePile: TurnDBO[],
     discardPile: TurnDBO[],

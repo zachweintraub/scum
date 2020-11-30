@@ -39,6 +39,7 @@ export const startGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
       const deck = new Deck(game.gameConfig.deckCount);
       const { hands, excessCards } = deck.shuffleAndDeal(game.playerIds.length);
       const newRound: Omit<ScumDb.RoundDBO, "_id"> = {
+        gameId: game._id,
         hands: [],
         discardPile: [],
         activePile: [],

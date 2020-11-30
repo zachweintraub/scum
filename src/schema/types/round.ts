@@ -3,6 +3,7 @@ import { GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLString } from "g
 import { ScumDb } from "../../services/scumDb";
 import { GqlCard } from "./card";
 import { GqlHand } from "./hand";
+import { GqlTurn } from "./turn";
 
 export const GqlRound = new GraphQLObjectType<ScumDb.RoundDBO, {}>({
   name: "Round",
@@ -19,12 +20,12 @@ export const GqlRound = new GraphQLObjectType<ScumDb.RoundDBO, {}>({
       resolve: ({ hands }) => hands,
     },
     activePile: {
-      type: new GraphQLList(GqlCard),
+      type: new GraphQLList(GqlTurn),
       description: "The pile of cards being played",
-      resolve: ({ activePile }) => activePile ?? [],
+      resolve: ({ activePile }) => activePile,
     },
     discardPile: {
-      type: new GraphQLList(GqlCard),
+      type: new GraphQLList(GqlTurn),
       description: "The pile of cards already played",
       resolve: ({ discardPile }) => discardPile ?? [],
     },

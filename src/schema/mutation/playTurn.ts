@@ -33,18 +33,24 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     if (!game) {
       throw new GraphQLError(`OH NO! No game found with ID ${gameId}`);
     }
+    const rounds = await scumDb.getRounds(game._id);
+    if (!rounds) {
+      throw new GraphQLError(`OH NO! No rounds found for game ${gameId}`);
+    }
     // Grab the players from the DB
     const players = await scumDb.getPlayers(game.playerIds);
+    if (!players) {
+      throw new GraphQLError(`OH NO! There was an issue getting the players for game ${gameId}`);
+    }
+    // Get the current player's name
+    let playerName = getPlayerName(players, playerId);
     // Isolate the current one for now
     const player = players.find(p => p._id.toHexString() === playerId);
     // If the player doesn't exist, that's also bad
-    if (!players || !player) {
-      throw new GraphQLError(`OH NO! There was an issue getting the players for game ${gameId}`);
-    }
     // Grab the player's name for logging actions
-    const playerName = player.name ?? "UNKNOWN PLAYER";
+
     // Grab the current round of this game
-    let currentRound = game.rounds.find(r => {
+    let currentRound = rounds.find(r => {
       return !!r.startedAt && !r.endedAt;
     });
     // If there is no current round, something is very wrong
@@ -52,9 +58,9 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
       throw new GraphQLError(`OH NO! No active round found for game ${gameId}`);
     }
     // Identify the hand of the player taking this turn
-    let targetHandIndex: number | null =  null;
+    let targetHandIndex: number =  -1;
     for (let i = 0; i < currentRound.hands.length; i++) {
-      if (currentRound.hands[i].playerId === playerId) {
+      if (currentRound.hands[i].playerId == playerId) {
         if (!currentRound.hands[i].isActive) {
           throw new GraphQLError(`It is not player ${playerId}'s turn!`);
         }
@@ -63,7 +69,8 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
       }
     }
     // Throw an error if no hand found
-    if (!targetHandIndex) {
+    if (targetHandIndex < 0) {
+      console.log(currentRound.hands);
       throw new GraphQLError(`No hand found for player ${playerId}!`);
     }
     // If there are no cards to play, play them
@@ -121,11 +128,15 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
         }
       }
       currentRound.hands[nextHandIndex].isActive = true;
+      playerName = getPlayerName(players, currentRound.hands[nextHandIndex].playerId);
 
-      // If the next player was responsible for the last turn in the pile, reset it and undo everyone's passing flag
+      // If the next player was responsible for the last turn in the pile, 
+      // OR if the next player was also the previous player,
+      // Reset the pile and undo everyone's hasPassed flag
       if (
-        currentRound.activePile.length > 0
-        && currentRound.hands[nextHandIndex].playerId === currentRound.activePile[currentRound.activePile.length - 1].playerId.toHexString()
+        (currentRound.activePile.length > 0
+        && currentRound.hands[nextHandIndex].playerId === currentRound.activePile[currentRound.activePile.length - 1].playerId.toHexString())
+        || nextHandIndex === targetHandIndex
       ) {
         currentRound = clearPile(currentRound);
         currentRound = resetHasPassedFlags(currentRound);
@@ -133,7 +144,8 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     }
     // Update the round
     try {
-      const success = await scumDb.updateRound(gameId, currentRound);
+      const success = await scumDb.updateRound(currentRound);
+      await scumDb.logAction(gameId, `it's ${playerName}'s turn!`);
       return success;
     } catch (err) {
       throw new GraphQLError(`An error occurred while updating the round for game ${gameId}: ${err}`);
@@ -208,19 +220,12 @@ function lastPlayShouldClearPile(activePile: ScumDb.TurnDBO[], gameConfig: ScumD
   }
 
   // If the count to explode the pile is divisible by the number of cards in the current play, keep checking...
+
+  // BIG KNOWN BUG! playing doubles on doubles blows it up no matter what :(
+
   if (explodePileCount % lastPlayedTurn.cards.length === 0) {
     // Grab the rank of the first card as our base rank to match
     let rankToMatch = lastPlayedTurn.cards[0].rank;
-    // Helper function to determine if all cards in a turn have the same rank
-    const turnIsUniform = (turn: ScumDb.TurnDBO) => {
-      let returnValue = true;
-      for (const card of lastPlayedTurn.cards) {
-        if (card.rank !== rankToMatch) {
-          returnValue = false;
-        }
-      }
-      return returnValue;
-    }
     // Establish some values to keep track of while iterating back in the active pile
     let shouldKeepChecking = true;
     let index = activePile.length - 1;
@@ -232,7 +237,7 @@ function lastPlayShouldClearPile(activePile: ScumDb.TurnDBO[], gameConfig: ScumD
       if (!turnToCheck || !turnToCheck.cards || !turnToCheck.cards.length) {
         return null;
       }
-      if (!turnIsUniform(turnToCheck)) {
+      if (!turnIsUniform(turnToCheck, rankToMatch)) {
         return null;
       }
       currentCount = currentCount + turnToCheck.cards.length;
@@ -259,6 +264,12 @@ function getNextRank(hands: ScumDb.HandDBO[]) {
     }
   }
   return highestRank;
+}
+
+function getPlayerName(players: ScumDb.PlayerDBO[], id: string) {
+  // Isolate the current one for now
+  const player = players.find(p => p._id.toHexString() === id);
+  return player?.name ?? "UNKNOWN PLAYER";
 }
 
 function resetHasPassedFlags(round: ScumDb.RoundDBO): ScumDb.RoundDBO {
@@ -301,4 +312,15 @@ function getNextHandIndex(hands: ScumDb.HandDBO[], targetHandIndex: number): num
   // If no one is determined to be eligible here, return null
   // NOTE: This would be because the initial player got rid of all their cards last play
   return -1;
+}
+
+// Helper function to determine if all cards in a turn have the same rank
+function turnIsUniform (turn: ScumDb.TurnDBO, rankToMatch: number) {
+  let returnValue = true;
+  for (const card of turn.cards) {
+    if (card.rank !== rankToMatch) {
+      returnValue = false;
+    }
+  }
+  return returnValue;
 }
