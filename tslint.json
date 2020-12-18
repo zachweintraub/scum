@@ -1,0 +1,12 @@
+{
+  "extends": "@helpfulhuman/tslint-rules",
+  "rules": {
+    "completed-docs": [
+      true,
+      "classes",
+      "functions",
+      "interfaces",
+      "methods"
+    ]
+  }
+}
