@@ -8,8 +8,7 @@
     "dev": "npm-run-all -p -l watch:*",
     "watch": "npm-run-all -p -l watch:*",
     "watch:server": "ts-node-dev server/index.ts",
-    "watch:client": "parcel watch ./client/index.tsx -d ./public -o app.js",
-    "watch:browser": "browser-sync start --config browser-sync.config.js"
+    "watch:client": "parcel watch ./client/index.tsx -d ./public -o app.js"
   },
   "author": "",
   "license": "ISC",

@@ -2508,10 +2508,38 @@ if ("development" === 'production') {
 },{"./cjs/react.development.js":"../node_modules/react/cjs/react.development.js"}],"views/Main.tsx":[function(require,module,exports) {
 "use strict";
 
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
+var __createBinding = this && this.__createBinding || (Object.create ? function (o, m, k, k2) {
+  if (k2 === undefined) k2 = k;
+  Object.defineProperty(o, k2, {
+    enumerable: true,
+    get: function get() {
+      return m[k];
+    }
+  });
+} : function (o, m, k, k2) {
+  if (k2 === undefined) k2 = k;
+  o[k2] = m[k];
+});
+
+var __setModuleDefault = this && this.__setModuleDefault || (Object.create ? function (o, v) {
+  Object.defineProperty(o, "default", {
+    enumerable: true,
+    value: v
+  });
+} : function (o, v) {
+  o["default"] = v;
+});
+
+var __importStar = this && this.__importStar || function (mod) {
+  if (mod && mod.__esModule) return mod;
+  var result = {};
+  if (mod != null) for (var k in mod) {
+    if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+  }
+
+  __setModuleDefault(result, mod);
+
+  return result;
 };
 
 Object.defineProperty(exports, "__esModule", {
@@ -2519,10 +2547,20 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.Main = void 0;
 
-var react_1 = __importDefault(require("react"));
+var react_1 = __importStar(require("react"));
 
 exports.Main = function () {
-  return react_1.default.createElement("div", null, "Hello, world...");
+  var _a = react_1.useState(0),
+      state = _a[0],
+      setState = _a[1];
+
+  var handleClick = function handleClick() {
+    setState(state + 1);
+  };
+
+  return react_1.default.createElement("div", null, "Hello, world... You have clicked the button ", state, " times.", react_1.default.createElement("div", {
+    onClick: handleClick
+  }, "THE BUTTON"));
 };
 },{"react":"../node_modules/react/index.js"}],"views/App.tsx":[function(require,module,exports) {
 "use strict";
@@ -29890,7 +29928,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52463" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50833" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

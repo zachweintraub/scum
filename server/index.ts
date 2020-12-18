@@ -8,6 +8,7 @@ import { MongoClient } from "mongodb";
 import { createServer } from "http";
 import { publisherFactory } from "./utils/publishUpdate";
 import * as path from "path";
+import * as fs from "fs";
 
 export type GraphQlContext = {
   scumDb: ScumDb;
@@ -28,6 +29,11 @@ async function main() {
   app.use(json());
 
   app.use(express.static(path.resolve(__dirname, "../public")));
+  app.get("/", (req, res) => {
+    const filePath = path.resolve(__dirname + "/../views/index.html");
+    const html = fs.readFileSync(filePath, "utf8");
+    res.type("html").send(html);
+  });
   
   // Grab some constants
   const dbString = process.env.DB_URL;

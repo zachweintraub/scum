@@ -1,3 +1,6 @@
+//I'M NOT USING THIS RIGHT NOW BECAUSE I CAN'T FIGURE IT OUT :(
+//WHEN THE TIME COMES, ADD THIS SCRIPT: "watch:browser": "browser-sync start --config browser-sync.config.js"
+
 const dotenv = require("dotenv");
 
 dotenv.config();
