@@ -1,5 +1,6 @@
 import { GraphQLError, GraphQLFieldConfig, GraphQLNonNull, GraphQLString } from "graphql";
 import { GraphQlContext } from "../..";
+import { ScumDb } from "../../services/scumDb";
 import { GqlPlayer } from "../types/player";
 
 type Args = {
@@ -16,11 +17,20 @@ export const createPlayer: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     },
   },
   async resolve(_, { name }, { scumDb }) {
+    let existingPlayer: ScumDb.PlayerDBO | null = null;
+    try {
+      existingPlayer = await scumDb.getPlayerByName(name);
+    } catch (err) {
+      throw new GraphQLError("Error creating user in the DB");
+    }
+    if (existingPlayer) {
+      throw new GraphQLError("A player with this name already exists!");
+    }
     try {
       const player = await scumDb.createPlayer(name);
       return player;
     } catch (err) {
-      throw new GraphQLError(`Unable to create new user: ${err}`);
+      throw new GraphQLError("Error creating user in the DB");
     }
   },
 };

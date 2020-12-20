@@ -26,7 +26,7 @@ export const GqlGame = new GraphQLObjectType<ScumDb.GameDBO, GraphQlContext>({
       description: "The host of the game",
       async resolve({ hostId }, _, { scumDb }) {
         try {
-          const host = await scumDb.getPlayer(hostId);
+          const host = await scumDb.getPlayerById(hostId);
           if (!host) {
             throw new Error(`No player found for ID ${hostId}`);
           }

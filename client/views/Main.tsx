@@ -1,17 +1,25 @@
-import React, { FC, useState } from "react";
+import React, { FC, useContext } from "react";
+import { PlayerContext } from "../contexts/Player";
+import { Portal } from "./Portal";
+import { Lobby } from "./Lobby";
 
 export const Main: FC = () => {
-  const [state, setState] = useState(0);
-  const handleClick = () => {
-    setState(state + 1);
-  }
+
+  const playerContext = useContext(PlayerContext);
+
+  const renderContent = () => {
+    return playerContext?.player ?
+      (
+        <Lobby />
+      )
+      : (
+        <Portal />
+      );
+  };
+
   return (
-    <div>
-      Hello, world...
-      You have clicked the button {state} times.
-      <div onClick={handleClick}>
-        THE BUTTON
-      </div>
-    </div>
+    <>
+      {renderContent()}
+    </>
   );
 };

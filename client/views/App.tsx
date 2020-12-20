@@ -1,9 +1,19 @@
 import React, { FC } from "react";
 import { Main } from "./Main";
+import { client } from "../services/apollo";
+import { ApolloProvider } from "@apollo/client";
+import { PlayerManager } from "../contexts/Player";
+import { BrowserRouter } from "react-router-dom";
 
 export const App: FC = () => {
-  console.log("APP IS LOADED");
+  
   return (
-    <Main />
+    <ApolloProvider client={client}>
+      <PlayerManager>
+        <BrowserRouter>
+          <Main />
+        </BrowserRouter>
+      </PlayerManager>
+    </ApolloProvider>
   );
 };

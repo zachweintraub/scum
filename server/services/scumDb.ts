@@ -86,9 +86,17 @@ export class ScumDb {
   /**
    * Get a single player by ID
    */
-  public async getPlayer(id: string): Promise<ScumDb.PlayerDBO> {
+  public async getPlayerById(id: string): Promise<ScumDb.PlayerDBO> {
     const thisId = new ObjectID(id);
     const player = await this.db.collection("players").findOne({ _id: thisId });
+    return player;
+  }
+
+  /**
+   * Get a single player by name
+   */
+  public async getPlayerByName(name: string): Promise<ScumDb.PlayerDBO> {
+    const player = await this.db.collection("players").findOne({ name: name });
     return player;
   }
   

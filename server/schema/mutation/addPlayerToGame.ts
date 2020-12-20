@@ -26,7 +26,7 @@ export const addPlayerToGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
 
     // Now add the player to the game
     try {
-      const player = await scumDb.getPlayer(playerId);
+      const player = await scumDb.getPlayerById(playerId);
       if (!player) {
         throw new Error(`No player found with ID ${playerId}`);
       }      
