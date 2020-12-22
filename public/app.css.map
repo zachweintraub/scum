@@ -1,1 +1,0 @@
-{"version":3,"sources":["views/App.scss"],"names":[],"mappings":"AAAA;EACE;EACA;EACA","file":"app.css","sourceRoot":"../client","sourcesContent":["body {\n  background-color: black;\n  color: white;\n  font-family: 'Courier New', Courier, monospace;\n}"]}
