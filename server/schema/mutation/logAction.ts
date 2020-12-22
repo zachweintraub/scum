@@ -19,9 +19,10 @@ export const logMessage: GraphQLFieldConfig<null, GraphQlContext, Args> = {
       description: "The message to log",
     },
   },
-  async resolve(_, { gameId, message }, { scumDb }) {
+  async resolve(_, { gameId, message }, { scumDb, publishUpdate }) {
     try {
       const success = await scumDb.logAction(gameId, message);
+      publishUpdate(gameId);
       return success;
     } catch (err) {
       throw new GraphQLError(`Unable to create new user: ${err}`);

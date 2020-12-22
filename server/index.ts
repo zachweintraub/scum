@@ -27,21 +27,6 @@ async function main() {
   // Set up app
   const app = express();
   app.use(json());
-
-  app.use(express.static(path.resolve(__dirname, "../public")));
-  app.get("/", (req, res) => {
-    // Grab the HTML
-    const filePath = path.resolve(__dirname + "/../views/index.html");
-    let html = fs.readFileSync(filePath, "utf8");
-    // Inject the API URL
-    const apiUrl = `${req.protocol}://${req.hostname}${port ? `:${port}` : ""}`;
-    html = html.replace(
-      "<var></var>",
-      `<script>var API_URL = "${apiUrl}";</script>`,
-    );
-    // Send it back
-    res.type("html").send(html);
-  });
   
   // Grab some constants
   const dbString = process.env.DB_URL;
@@ -76,6 +61,21 @@ async function main() {
 
   const httpServer = createServer(app);
   server.installSubscriptionHandlers(httpServer);
+
+  app.use(express.static(path.resolve(__dirname, "../public")));
+  app.use((req, res) => {
+    // Grab the HTML
+    const filePath = path.resolve(__dirname + "/../views/index.html");
+    let html = fs.readFileSync(filePath, "utf8");
+    // Inject the API URL
+    const apiUrl = `${req.protocol}://${req.hostname}${port ? `:${port}` : ""}`;
+    html = html.replace(
+      "<var></var>",
+      `<script>var API_URL = "${apiUrl}";</script>`,
+    );
+    // Send it back
+    res.type("html").send(html);
+  });
   
   // Start listening
   httpServer.listen(port, () => {
