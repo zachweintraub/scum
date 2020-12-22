@@ -76,10 +76,26 @@ export class ScumDb {
   }
 
   /**
+   * Get all games from the DB
+   */
+  public async getAllGames(): Promise<ScumDb.GameDBO[]> {
+    const games = await this.db.collection("games").find().toArray();
+    return games;
+  }
+
+  /**
    * Get all open games (those that have not started)
    */
   public async getOpenGames() {
     const games = await this.db.collection("games").find({ startedAt: { $exists: false } }).toArray();
+    return games;
+  }
+
+  /**
+   * Get all games that include a given player
+   */
+  public async getGamesForPlayer(playerId: string): Promise<ScumDb.GameDBO[]> {
+    const games = await this.db.collection("games").find({ playerIds: playerId }).toArray();
     return games;
   }
 

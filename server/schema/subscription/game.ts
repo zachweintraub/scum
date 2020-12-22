@@ -4,11 +4,11 @@ import { GAME_UPDATED } from "../../utils/publishUpdate";
 import { withFilter } from "apollo-server-express";
 import { GqlGame } from "../types/game";
 
-type Args = {
+export type GameSubscriptionArgs = {
   id: string;
 };
 
-export const game: GraphQLFieldConfig<null, GraphQlContext, Args> = {
+export const game: GraphQLFieldConfig<null, GraphQlContext, GameSubscriptionArgs> = {
   type: GqlGame,
   args: {
     id: {

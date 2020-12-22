@@ -8,7 +8,7 @@ type Args = {
 
 export const getGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
   type: GqlGame,
-  description: "Get all games that are not active (they haven't started).",
+  description: "Get a specific game",
   args: {
     id: {
       type: new GraphQLNonNull(GraphQLString),
