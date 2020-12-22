@@ -12,20 +12,26 @@ export const Game: FC = () => {
 
   const { gameId } = useParams<GameViewParams>();
 
-  // const playerContext = useContext(PlayerContext);
+  const playerContext = useContext(PlayerContext);
   
-  // const { data, loading } = useQuery<GetGameResponse, { id: string }>(GET_GAME, {
-  //   variables: {
-  //     id: gameId!,
-  //   },
-  // });
+  const { data, loading } = useQuery<GetGameResponse, { id: string }>(GET_GAME, {
+    variables: {
+      id: gameId!,
+    },
+  });
 
 
 
 
 
+  if (loading) {
+    return <p>Loading...</p>;
+  }
 
-  return <div>GAME: {gameId}</div>;
+  if (data && data.game) {
+    return <div>GAME: {data.game.name}</div>;
+  }
 
-  
+  return <p>idk what's wrong</p>;
+
 };

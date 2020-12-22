@@ -6648,35 +6648,7 @@ if ("development" !== "production") {
     style: _propTypes.default.object
   });
 }
-},{"react-router":"../node_modules/react-router/esm/react-router.js","@babel/runtime/helpers/esm/inheritsLoose":"../node_modules/@babel/runtime/helpers/esm/inheritsLoose.js","react":"../node_modules/react/index.js","history":"../node_modules/history/esm/history.js","prop-types":"../node_modules/prop-types/index.js","tiny-warning":"../node_modules/tiny-warning/dist/tiny-warning.esm.js","@babel/runtime/helpers/esm/extends":"../node_modules/@babel/runtime/helpers/esm/extends.js","@babel/runtime/helpers/esm/objectWithoutPropertiesLoose":"../node_modules/@babel/runtime/helpers/esm/objectWithoutPropertiesLoose.js","tiny-invariant":"../node_modules/tiny-invariant/dist/tiny-invariant.esm.js"}],"views/Game.tsx":[function(require,module,exports) {
-"use strict";
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Game = void 0;
-
-var react_1 = __importDefault(require("react"));
-
-var react_router_dom_1 = require("react-router-dom");
-
-exports.Game = function () {
-  var gameId = react_router_dom_1.useParams().gameId; // const playerContext = useContext(PlayerContext);
-  // const { data, loading } = useQuery<GetGameResponse, { id: string }>(GET_GAME, {
-  //   variables: {
-  //     id: gameId!,
-  //   },
-  // });
-
-  return react_1.default.createElement("div", null, "GAME: ", gameId);
-};
-},{"react":"../node_modules/react/index.js","react-router-dom":"../node_modules/react-router-dom/esm/react-router-dom.js"}],"../node_modules/tslib/tslib.es6.js":[function(require,module,exports) {
+},{"react-router":"../node_modules/react-router/esm/react-router.js","@babel/runtime/helpers/esm/inheritsLoose":"../node_modules/@babel/runtime/helpers/esm/inheritsLoose.js","react":"../node_modules/react/index.js","history":"../node_modules/history/esm/history.js","prop-types":"../node_modules/prop-types/index.js","tiny-warning":"../node_modules/tiny-warning/dist/tiny-warning.esm.js","@babel/runtime/helpers/esm/extends":"../node_modules/@babel/runtime/helpers/esm/extends.js","@babel/runtime/helpers/esm/objectWithoutPropertiesLoose":"../node_modules/@babel/runtime/helpers/esm/objectWithoutPropertiesLoose.js","tiny-invariant":"../node_modules/tiny-invariant/dist/tiny-invariant.esm.js"}],"../node_modules/tslib/tslib.es6.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -43202,7 +43174,106 @@ Object.keys(_index2).forEach(function (key) {
     }
   });
 });
-},{"./core/index.js":"../node_modules/@apollo/client/core/index.js","./react/index.js":"../node_modules/@apollo/client/react/index.js"}],"queries/getPlayer.ts":[function(require,module,exports) {
+},{"./core/index.js":"../node_modules/@apollo/client/core/index.js","./react/index.js":"../node_modules/@apollo/client/react/index.js"}],"queries/getGame.ts":[function(require,module,exports) {
+"use strict";
+
+var __makeTemplateObject = this && this.__makeTemplateObject || function (cooked, raw) {
+  if (Object.defineProperty) {
+    Object.defineProperty(cooked, "raw", {
+      value: raw
+    });
+  } else {
+    cooked.raw = raw;
+  }
+
+  return cooked;
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.GET_GAME = exports.gameFields = void 0;
+
+var client_1 = require("@apollo/client");
+
+exports.gameFields = "\n  id\n  name\n  createdAt\n  startedAt\n  endedAt\n  host {\n    id\n    name\n  }\n  players {\n    id\n    name\n  }\n  rounds {\n    id\n    startedAt\n    endedAt\n    hands {\n      playerId\n      cards {\n        rank\n        fullName\n        alias\n      }\n      isActive\n      hasPassed\n      startRank\n      endRank\n    }\n    activePile {\n      playerId\n      playedAt\n      tookThePile\n      cards {\n        rank\n        fullName\n        alias\n      }\n    }\n    discardPile {\n      playerId\n      playedAt\n      tookThePile\n      cards {\n        rank\n        fullName\n        alias\n      }\n    }\n    excessCards {\n      rank\n      fullName\n      alias\n    }\n  }\n";
+exports.GET_GAME = client_1.gql(templateObject_1 || (templateObject_1 = __makeTemplateObject(["\n  query game(\n    $id: String!\n  ) {\n    game(id: $id) {\n      ", "\n    }\n  }\n"], ["\n  query game(\n    $id: String!\n  ) {\n    game(id: $id) {\n      ", "\n    }\n  }\n"])), exports.gameFields);
+var templateObject_1;
+},{"@apollo/client":"../node_modules/@apollo/client/index.js"}],"views/Game.tsx":[function(require,module,exports) {
+"use strict";
+
+var __createBinding = this && this.__createBinding || (Object.create ? function (o, m, k, k2) {
+  if (k2 === undefined) k2 = k;
+  Object.defineProperty(o, k2, {
+    enumerable: true,
+    get: function get() {
+      return m[k];
+    }
+  });
+} : function (o, m, k, k2) {
+  if (k2 === undefined) k2 = k;
+  o[k2] = m[k];
+});
+
+var __setModuleDefault = this && this.__setModuleDefault || (Object.create ? function (o, v) {
+  Object.defineProperty(o, "default", {
+    enumerable: true,
+    value: v
+  });
+} : function (o, v) {
+  o["default"] = v;
+});
+
+var __importStar = this && this.__importStar || function (mod) {
+  if (mod && mod.__esModule) return mod;
+  var result = {};
+  if (mod != null) for (var k in mod) {
+    if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+  }
+
+  __setModuleDefault(result, mod);
+
+  return result;
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Game = void 0;
+
+var react_1 = __importStar(require("react"));
+
+var react_router_dom_1 = require("react-router-dom");
+
+var Player_1 = require("../contexts/Player");
+
+var client_1 = require("@apollo/client");
+
+var getGame_1 = require("../queries/getGame");
+
+exports.Game = function () {
+  var gameId = react_router_dom_1.useParams().gameId;
+  var playerContext = react_1.useContext(Player_1.PlayerContext);
+
+  var _a = client_1.useQuery(getGame_1.GET_GAME, {
+    variables: {
+      id: gameId
+    }
+  }),
+      data = _a.data,
+      loading = _a.loading;
+
+  if (loading) {
+    return react_1.default.createElement("p", null, "Loading...");
+  }
+
+  if (data && data.game) {
+    return react_1.default.createElement("div", null, "GAME: ", data.game.name);
+  }
+
+  return react_1.default.createElement("p", null, "idk what's wrong");
+};
+},{"react":"../node_modules/react/index.js","react-router-dom":"../node_modules/react-router-dom/esm/react-router-dom.js","../contexts/Player":"contexts/Player.tsx","@apollo/client":"../node_modules/@apollo/client/index.js","../queries/getGame":"queries/getGame.ts"}],"queries/getPlayer.ts":[function(require,module,exports) {
 "use strict";
 
 var __makeTemplateObject = this && this.__makeTemplateObject || function (cooked, raw) {
@@ -71241,7 +71312,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56156" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57172" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

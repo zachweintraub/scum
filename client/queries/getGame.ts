@@ -64,7 +64,11 @@ export const gameFields = `
     endedAt
     hands {
       playerId
-      cards
+      cards {
+        rank
+        fullName
+        alias
+      }
       isActive
       hasPassed
       startRank
