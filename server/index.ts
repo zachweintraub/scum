@@ -71,7 +71,7 @@ async function main() {
     const apiUrl = `${req.protocol}://${req.hostname}${port ? `:${port}` : ""}`;
     html = html.replace(
       "<var></var>",
-      `<script>var API_URL = "${apiUrl}";</script>`,
+      `<script>var API_URL = "${apiUrl}/graphql";</script>`,
     );
     // Send it back
     res.type("html").send(html);

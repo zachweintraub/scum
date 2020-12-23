@@ -7,6 +7,7 @@ export type Game = {
   host: Player;
   players: Player[];
   rounds: Round[] | null;
+  actionLog: ActionLogItem[];
   createdAt: Date | null;
   startedAt: Date | null;
   endedAt: Date | null;
@@ -32,6 +33,11 @@ export type Turn = {
   playerId: string;
   playedAt: Date;
   tookThePile: boolean;
+};
+
+export type ActionLogItem = {
+  message: string;
+  time: Date;
 };
 
 export type Card = {
@@ -99,6 +105,10 @@ export const gameFields = `
       fullName
       alias
     }
+  }
+  actionLog {
+    message
+    time
   }
 `;
 

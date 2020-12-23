@@ -1,4 +1,4 @@
-import React, { FC, useContext } from "react";
+import React, { FC, useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { PlayerContext } from "../contexts/Player";
 import { useQuery } from "@apollo/client";
@@ -29,21 +29,15 @@ export const Game: FC = () => {
   subscribeToMore({
     document: SUBSCRIBE_TO_GAME,
     variables: { id: gameId },
-    updateQuery: (prev, { subscriptionData }) => {
-      if (!subscriptionData.data) {
+    updateQuery: (prev, {subscriptionData}) => {
+      console.log(prev);
+      console.log(subscriptionData);
+      if (!subscriptionData.data.game) {
         return prev;
-      }      
-      const newFeedItem = subscriptionData.data.commentAdded;
-      return Object.assign({}, prev, {
-        post: {
-          comments: [newFeedItem, ...prev.post.comments]
-        }
-      });
-    }
+      }  
+      return prev;
+    },
   });
-
-
-
 
 
   if (loading) {
@@ -51,7 +45,7 @@ export const Game: FC = () => {
   }
 
   if (data && data.game) {
-    return <div>GAME: {data.game.name}</div>;
+    return <div>GAME: {data.game.actionLog[data.game.actionLog.length-1]?.message ?? "No messages"}</div>;
   }
 
   return <p>idk what's wrong</p>;
