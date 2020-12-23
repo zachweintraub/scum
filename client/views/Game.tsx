@@ -1,4 +1,4 @@
-import React, { FC, useContext, useEffect } from "react";
+import React, { FC, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { PlayerContext } from "../contexts/Player";
 import { useQuery } from "@apollo/client";
@@ -29,14 +29,6 @@ export const Game: FC = () => {
   subscribeToMore({
     document: SUBSCRIBE_TO_GAME,
     variables: { id: gameId },
-    updateQuery: (prev, {subscriptionData}) => {
-      console.log(prev);
-      console.log(subscriptionData);
-      if (!subscriptionData.data.game) {
-        return prev;
-      }  
-      return prev;
-    },
   });
 
 
