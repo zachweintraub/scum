@@ -4,10 +4,17 @@ import { JoinGameButton } from "../components/JoinGameButton";
 import { useQuery } from "@apollo/client";
 import { GetLobbyGamesResponse, GET_LOBBY_GAMES } from "../queries/getGames";
 import { GetGamesArgs } from "../../server/schema/query/getGames";
+import { Portal } from "./Portal";
 
 export const Lobby: FC = () => {
 
   const playerContext = useContext(PlayerContext);
+
+  if (!playerContext?.player) {
+    return (
+      <Portal />
+    );
+  }
   
   const { data, loading } = useQuery<GetLobbyGamesResponse, GetGamesArgs>(GET_LOBBY_GAMES, {
     variables: {

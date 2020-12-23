@@ -4,6 +4,7 @@ import { PlayerContext } from "../contexts/Player";
 import { useQuery } from "@apollo/client";
 import { GetGameResponse, GET_GAME } from "../queries/getGame";
 import { SUBSCRIBE_TO_GAME } from "../subscriptions/game";
+import { Portal } from "./Portal";
 //import { scumHistory } from "./Main";
 
 type GameViewParams = {
@@ -14,11 +15,13 @@ export const Game: FC = () => {
 
   const { gameId } = useParams<GameViewParams>();
 
-  // const playerContext = useContext(PlayerContext);
+  const playerContext = useContext(PlayerContext);
 
-  // if (!playerContext?.player) {
-  //   scumHistory.replace("/");
-  // }
+  if (!playerContext?.player) {
+    return (
+      <Portal />
+    );
+  }
   
   const { subscribeToMore, data, loading } = useQuery<GetGameResponse, { id: string }>(GET_GAME, {
     variables: {
