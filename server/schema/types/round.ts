@@ -1,4 +1,4 @@
-import { GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
+import { GraphQLBoolean, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
 import { GraphQLDateTime } from "graphql-iso-date";
 import { ScumDb } from "../../services/scumDb";
 import { GqlCard } from "./card";
@@ -13,6 +13,13 @@ export const GqlRound = new GraphQLObjectType<ScumDb.RoundDBO, {}>({
       type: new GraphQLNonNull(GraphQLString),
       description: "The DB ID of the round",
       resolve: ({ _id }) => _id,
+    },
+    isActive: {
+      type: new GraphQLNonNull(GraphQLBoolean),
+      description: "True if the round is currently in progress",
+      resolve: ({ startedAt, endedAt}) => {
+        return !!startedAt && !endedAt;
+      },
     },
     hands: {
       type: new GraphQLNonNull(new GraphQLList(GqlHand)),

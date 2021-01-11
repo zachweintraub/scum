@@ -15,8 +15,13 @@ export type Game = {
 
 export type Round = {
   id: string;
+  isActive: boolean;
   startedAt: Date | null;
   endedAt: Date | null;
+  hands: Hand[];
+  activePile: Turn[];
+  discardPile: Turn[];
+  excessCards: Card[];
 };
 
 export type Hand = {
@@ -66,6 +71,7 @@ export const gameFields = `
   }
   rounds {
     id
+    isActive
     startedAt
     endedAt
     hands {
