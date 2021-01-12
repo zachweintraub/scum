@@ -26,8 +26,6 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     },
   },
   async resolve(_, { gameId, playerId, cardsToPlay }, { scumDb, publishUpdate }) {
-    console.log("SERVER DETECTS TURN PLAYED!");
-    console.log("cards: ", cardsToPlay);
     // Grab the game from the DB
     const game = await scumDb.getGame(gameId);
     // If the game doesn't exist, that's bad
@@ -141,7 +139,6 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     }
     // Update the round
     try {
-      console.log(currentRound);
       const success = await scumDb.updateRound(currentRound);
       publishUpdate(gameId);
       await scumDb.logAction(gameId, `it's ${playerName}'s turn!`);

@@ -47,7 +47,6 @@ export const Game: FC = () => {
   const [playTurn, { loading: playTurnLoading, error: playTurnError }] = useMutation<boolean, PlayTurnArgs>(PLAY_TURN);
 
   const handlePlayTurn = async (cards?: Card[]) => {
-    console.log("client cards: ", cards);
     const variables: PlayTurnArgs = {
       playerId: playerContext.player!.id,
       gameId: data!.game.id,
@@ -98,7 +97,7 @@ export const Game: FC = () => {
         {activeRound && renderActivePile()}
         <PlayerHand
           name={playerContext.player.name}
-          cards={playerHand?.cards}
+          cards={getSortedCards(playerHand?.cards)}
           turnInProgress={!!playerHand?.isActive}
           playToBeat={previousTurn?.cards}
           onPlayTurn={handlePlayTurn}
@@ -111,3 +110,9 @@ export const Game: FC = () => {
   return <p>idk what's wrong</p>;
 
 };
+
+function getSortedCards(cards?: Card[]) {
+  return cards?.slice().sort((a, b) => {
+    return a.rank - b.rank;
+  });
+}

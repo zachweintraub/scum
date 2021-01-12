@@ -81,13 +81,11 @@ export const PlayerHand: FC<PlayerHandProps> = ({
   }
 
   const handleClickPlay = () => {
-    console.log("Will play these: ", selectedCards.map(c => c.alias));
     onPlayTurn(selectedCards);
     setSelectedCards([]);
   }
 
   const handleClickPass = () => {
-    console.log("Will pass...");
     onPlayTurn();
   }
 
