@@ -63,15 +63,15 @@ export function clearPile(round: ScumDb.RoundDBO) {
  */
 export function lastPlayShouldClearPile(activePile: ScumDb.TurnDBO[], gameConfig: ScumDb.GameConfigDBO): string | null {
   // Establish the rules
-  const {  powerCard, explodePileCount } = gameConfig;
+  const {  powerCardAlias, explodePileCount } = gameConfig;
   const lastPlayedTurn = activePile[activePile.length - 1];
 
   // If the last played card is the power card by itself, return true
   if (
       lastPlayedTurn.cards.length === 1
-      && lastPlayedTurn.cards[0].alias === powerCard.alias
+      && lastPlayedTurn.cards[0].alias === powerCardAlias
     ) {
-    return `the power card (${powerCard.alias})`;
+    return `the power card (${powerCardAlias})`;
   }
 
   // If the count to explode the pile is divisible by the number of cards in the current play, keep checking...

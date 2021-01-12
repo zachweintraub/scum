@@ -56,14 +56,14 @@ export const PlayerHand: FC<PlayerHandProps> = ({
     if (selectedCards.length === 1 && selectedCards[0].alias === powerCard) {
       return true;
     }
-    if (playToBeat.length === selectedCards.length) {
+    if (playToBeat.length === selectedCards.length) {      
       const baseRank = selectedCards[0].rank;
       for (const card of selectedCards) {
         if (card.rank !== baseRank) {
           return false;
         }
-        return baseRank >= playToBeat[0].rank;
       }
+      return baseRank >= playToBeat[0].rank;
     }
     return false;
   }, [turnInProgress, selectedCards.length, playToBeat]);
