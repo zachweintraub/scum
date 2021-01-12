@@ -56,10 +56,10 @@ export const createGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
   }, { scumDb }) {
 
     // Grab the power card as an object
-    const powerCardObject = new Deck()
+    const foundPowerCard = new Deck()
       .allCards
       .find(c => c.alias.toUpperCase() === powerCard.toUpperCase());
-    if (!powerCardObject) {
+    if (!foundPowerCard) {
       throw new GraphQLError("Failed to create game: invalid power card entered");
     }
 
@@ -68,7 +68,7 @@ export const createGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
       deckCount,
       showHandCounts,
       explodePileCount,
-      powerCard: powerCardObject,
+      powerCardAlias: powerCard,
     };
 
     // Finally, create the game!
@@ -76,7 +76,7 @@ export const createGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
       const newGame = await scumDb.createGame(name, hostId, gameConfig);
       return newGame;
     } catch (err) {
-      throw new GraphQLError(`Unable to create new user: ${err}`);
+      throw new GraphQLError(`Unable to create new game: ${err}`);
     }
   },
 };

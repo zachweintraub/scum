@@ -8,9 +8,17 @@ export type Game = {
   players: Player[];
   rounds: Round[] | null;
   actionLog: ActionLogItem[];
+  gameConfig: GameConfig;
   createdAt: Date | null;
   startedAt: Date | null;
   endedAt: Date | null;
+};
+
+export type GameConfig = {
+  deckCount: number,
+  showHandCounts: boolean,
+  explodePileCount: number,
+  powerCardAlias: string,
 };
 
 export type Round = {
@@ -115,6 +123,12 @@ export const gameFields = `
   actionLog {
     message
     time
+  }
+  gameConfig {
+    deckCount
+    showHandCounts
+    explodePileCount
+    powerCardAlias
   }
 `;
 

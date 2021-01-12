@@ -197,7 +197,7 @@ export namespace ScumDb {
     deckCount: number,
     showHandCounts: boolean,
     explodePileCount: number,
-    powerCard: CardDBO,
+    powerCardAlias: string,
   };
 
   export type GameDBO = {

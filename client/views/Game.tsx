@@ -102,6 +102,7 @@ export const Game: FC = () => {
           turnInProgress={!!playerHand?.isActive}
           playToBeat={previousTurn?.cards}
           onPlayTurn={handlePlayTurn}
+          powerCard={data.game.gameConfig.powerCardAlias}
         />
       </>
     );  

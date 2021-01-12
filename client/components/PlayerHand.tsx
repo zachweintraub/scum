@@ -8,9 +8,17 @@ type PlayerHandProps = {
   turnInProgress: boolean;
   playToBeat?: Card[];
   onPlayTurn(cards?: Card[]): void;
+  powerCard: string;
 };
 
-export const PlayerHand: FC<PlayerHandProps> = ({ cards, turnInProgress, playToBeat, name, onPlayTurn }) => {
+export const PlayerHand: FC<PlayerHandProps> = ({
+  cards,
+  turnInProgress,
+  playToBeat,
+  name,
+  onPlayTurn,
+  powerCard
+}) => {
 
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
 
@@ -40,13 +48,24 @@ export const PlayerHand: FC<PlayerHandProps> = ({ cards, turnInProgress, playToB
       return false;
     }
     if (selectedCards.length < 1) {
-
       return false;
     }
     if (!playToBeat) {
       return true;
     }
-    return playToBeat.length === selectedCards.length;
+    if (selectedCards.length === 1 && selectedCards[0].alias === powerCard) {
+      return true;
+    }
+    if (playToBeat.length === selectedCards.length) {
+      const baseRank = selectedCards[0].rank;
+      for (const card of selectedCards) {
+        if (card.rank !== baseRank) {
+          return false;
+        }
+        return baseRank >= playToBeat[0].rank;
+      }
+    }
+    return false;
   }, [turnInProgress, selectedCards.length, playToBeat]);
 
   const renderCards = (cards: Card[]) => {
