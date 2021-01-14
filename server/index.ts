@@ -55,6 +55,11 @@ async function main() {
     schema,
     context,
     playground: true,
+    subscriptions: {
+      onConnect: (params: {playerId: string}) => {
+        console.log(params.playerId);
+      },
+    },
   });
 
   server.applyMiddleware({ app });

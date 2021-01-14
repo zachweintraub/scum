@@ -14,6 +14,9 @@ const wsLink = new WebSocketLink({
   uri: API_URL_WS,
   options: {
     reconnect: true,
+    connectionParams: {
+      testValue: "hello!",
+    },
   },
 });
 
