@@ -15,6 +15,8 @@ const httpLink = new HttpLink({
 export type ApolloClientCtx = {
   /** When a player connects to a game, initiate a WS connection with the appropriate params */
   initiateWsLink(playerId: string, gameId: string): void;
+  /** Flag to prevent infinite rerenders */
+  wsLinkInitiated: boolean;
 };
 
 export const ApolloClientContext = createContext<ApolloClientCtx | null>(null);
@@ -29,6 +31,7 @@ export const ApolloClientManager: FC = ({ children }) => {
   });
 
   const [ client, setClient ] = useState(initialClient);
+  const [ wsLinkInitiated, setWsLinkInitiated ] = useState(false);
   
   const initiateWsLink = (playerId: string, gameId: string) => {
     const wsLink = new WebSocketLink({
@@ -59,11 +62,13 @@ export const ApolloClientManager: FC = ({ children }) => {
       cache: new InMemoryCache(),
     });
 
+    setWsLinkInitiated(true);
     setClient(newClient);
   }
 
   const context: ApolloClientCtx = {
     initiateWsLink,
+    wsLinkInitiated,
   };
 
   return (

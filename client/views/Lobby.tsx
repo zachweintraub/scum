@@ -10,18 +10,19 @@ export const Lobby: FC = () => {
 
   const playerContext = useContext(PlayerContext);
 
-  if (!playerContext?.player) {
-    return (
-      <Portal />
-    );
-  }
-  
   const { data, loading } = useQuery<GetLobbyGamesResponse, GetGamesArgs>(GET_LOBBY_GAMES, {
     variables: {
       playerId: playerContext?.player?.id ?? undefined,
       openOnly: true,
     },
   });
+  
+  if (!playerContext?.player) {
+    return (
+      <Portal />
+    );
+  }
+  
 
   const renderOpenGames = () => {
     const openGames = data?.openGames.filter(g => {

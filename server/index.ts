@@ -56,9 +56,10 @@ async function main() {
     context,
     playground: true,
     subscriptions: {
-      onConnect: (params: {playerId: string}) => {
-        console.log(params.playerId);
+      onConnect: (params: {playerId: string, gameId: string}) => {
+        console.log(params.playerId, params.gameId);
       },
+      onDisconnect: (websocket, context) => console.log(context),
     },
   });
 

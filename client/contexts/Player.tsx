@@ -8,7 +8,7 @@ export type Player = {
 export type PlayerCtx = {
   player: Player | null;
   /** Provide a method for setting the player */
-  setPlayer(player: Player): void;
+  onSetPlayer(player: Player): void;
 };
 
 export const PlayerContext = createContext<PlayerCtx | null>(null);
@@ -19,9 +19,13 @@ export const PlayerManager: FC = ({ children }) => {
 
   const [player, setPlayer] = useState<Player | null>(null);
 
+  const handleSetPlayer = (player: Player) => {
+    setPlayer(player);
+  }
+
   const context: PlayerCtx = {
     player,
-    setPlayer,
+    onSetPlayer: handleSetPlayer,
   };
 
   return (

@@ -41,8 +41,8 @@ export const Portal: FC = () => {
   };
 
   useEffect(() => {
-    if (playerContext?.setPlayer && getPlayerData?.player) {
-      playerContext.setPlayer(getPlayerData.player);
+    if (playerContext?.onSetPlayer && getPlayerData?.player) {
+      playerContext.onSetPlayer(getPlayerData.player);
     }
   }, [getPlayerData]);
 
