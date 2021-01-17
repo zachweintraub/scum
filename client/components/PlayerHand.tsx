@@ -44,6 +44,13 @@ export const PlayerHand: FC<PlayerHandProps> = ({
     }
   }
 
+  const canPass = useMemo(() => {
+    if (!playToBeat || playToBeat.length === 0) {
+      return false;
+    }
+    return true;
+  }, [playToBeat]);
+
   const canPlay = useMemo(() => {
     if (!turnInProgress) {
       return false;
@@ -101,15 +108,16 @@ export const PlayerHand: FC<PlayerHandProps> = ({
     );
   }, [canPlay, selectedCards]);
 
-  const renderPassButton = () => {
+  const passButton = useMemo(() => {
     return (
       <button
+        disabled={!canPass}
         onClick={handleClickPass}
       >
         Pass
       </button>
     );
-  }
+  }, [canPass])
 
   if (!cards) {
     return <p>There should be cards here...</p>
@@ -121,7 +129,7 @@ export const PlayerHand: FC<PlayerHandProps> = ({
         {renderCards(cards)}
       </div>
       {turnInProgress && playButton}
-      {turnInProgress && renderPassButton()}
+      {turnInProgress && passButton}
     </>
   );
 };

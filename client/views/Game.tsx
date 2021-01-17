@@ -8,6 +8,7 @@ import { Portal } from "./Portal";
 import { PlayerHand } from "../components/PlayerHand";
 import { PlayingCard } from "../components/PlayingCard";
 import { PlayTurnArgs, PLAY_TURN } from "../mutations/playTurn";
+import { OtherPlayerHand, OtherPlayers } from "../components/OtherPlayers";
 //import { ApolloClientContext } from "../contexts/ApolloClient";
 
 /**
@@ -42,20 +43,23 @@ export const Game: FC = () => {
   // }
 
 
-  
+  // Query for the whole game
   const { subscribeToMore, data, loading: gameDataLoading } = useQuery<GetGameResponse, { id: string }>(GET_GAME, {
     variables: {
       id: gameId!,
     },
   });
 
+  // Initiate subscription to the game
   subscribeToMore({
     document: SUBSCRIBE_TO_GAME,
     variables: { id: gameId },
   });
 
+  // Set up the mutation that allows a player to play their turn
   const [playTurn, { loading: playTurnLoading, error: playTurnError }] = useMutation<boolean, PlayTurnArgs>(PLAY_TURN);
 
+  // Handler for the action of playing a turn, passed down as a prop
   const handlePlayTurn = async (cards?: Card[]) => {
     const variables: PlayTurnArgs = {
       playerId: playerContext.player!.id,
@@ -65,10 +69,29 @@ export const Game: FC = () => {
     await playTurn({ variables });
   };
 
+  // This is the current active round pulled from the game
   const activeRound = data?.game.rounds?.find(r => r.isActive);
 
+  // This is the hand of the logged in player
   const playerHand = activeRound?.hands.find(h => h.playerId === playerContext?.player?.id);
 
+  // These objects represent the hands of the other players
+  const otherPlayers: OtherPlayerHand[] = useMemo(() => {
+    let playerHands: OtherPlayerHand[] = [];
+    if (data?.game.players && activeRound) {
+      for (const hand of activeRound.hands) {
+          const playerName = data?.game.players.find(p => p.id === hand.playerId)?.name ?? "UNKNOWN";
+          playerHands.push({
+            playerName,
+            cardsRemaining: hand.cards.length,
+            isActive: hand.isActive,
+          });
+      }
+    }
+    return playerHands;
+  }, [data?.game]);
+
+  // This is the last turn played to the active pile
   const previousTurn = useMemo(() => {
     if (!activeRound || !activeRound.activePile || activeRound.activePile.length < 1) {
       return undefined;
@@ -76,6 +99,7 @@ export const Game: FC = () => {
     return activeRound.activePile[activeRound.activePile.length - 1];
   }, [data?.game]);
 
+  // This renders the active pile by displaying the previous turn or a message
   const renderActivePile = () => {
     const turn = previousTurn;
     if (!turn) {
@@ -92,18 +116,23 @@ export const Game: FC = () => {
     });
   }
 
-
+  // Return a loading message while the game is being fetched
   if (gameDataLoading || playTurnLoading) {
     return <p>Loading...</p>;
   }
 
+  // Return a message if the turn was unable to be played
   if (playTurnError) {
     return <p>An error occurred playing turn...</p>;
   }
 
+  // If the game data exists...
   if (data && data.game) {
     return (
       <>
+        <OtherPlayers
+          playerHands={otherPlayers}
+        />
         {activeRound && renderActivePile()}
         <PlayerHand
           name={playerContext.player.name}
@@ -117,10 +146,12 @@ export const Game: FC = () => {
     );  
   }
 
+  // If none of the above, something is definitely wrong
   return <p>idk what's wrong</p>;
 
 };
 
+// Function to sort the player's cards from low to high
 function getSortedCards(cards?: Card[]) {
   return cards?.slice().sort((a, b) => {
     return a.rank - b.rank;

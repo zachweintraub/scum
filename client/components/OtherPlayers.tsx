@@ -1,5 +1,32 @@
 import React, { FC } from "react";
+import "./OtherPlayers.scss";
 
-export const OtherPlayers: FC<{}> = () => {
+export type OtherPlayerHand = {
+  playerName: string;
+  cardsRemaining: number;
+  isActive: boolean;
+}
 
+type OtherPlayersProps = {
+  playerHands: OtherPlayerHand[];
+}
+
+export const OtherPlayers: FC<OtherPlayersProps> = ({ playerHands }) => {
+  const renderOtherPlayerHand = (hand: OtherPlayerHand) => {
+    return (
+      <div
+        className={`otherPlayerHand${hand.isActive ? " isActive" : ""}`}
+      >
+        <p>{hand.playerName}</p>
+        <p>{hand.cardsRemaining}</p>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="otherPlayers"
+    >
+      {playerHands.map(renderOtherPlayerHand)}
+    </div>
+  )
 }

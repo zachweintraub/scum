@@ -2,7 +2,6 @@ import { GraphQLBoolean, GraphQLError, GraphQLFieldConfig, GraphQLInt, GraphQLNo
 import { Deck } from "../types/deck";
 import { GraphQlContext } from "../..";
 import { ScumDb } from "../../services/scumDb";
-import { GqlGame } from "../types/game";
 
 type Args = {
   hostId: string,
@@ -14,7 +13,7 @@ type Args = {
 };
 
 export const createGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
-  type: new GraphQLNonNull(GqlGame),
+  type: new GraphQLNonNull(GraphQLString),
   description: "Creates a new game from a name, host name, and game config variables.",
   args: {
     name: {
@@ -74,7 +73,7 @@ export const createGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     // Finally, create the game!
     try {      
       const newGame = await scumDb.createGame(name, hostId, gameConfig);
-      return newGame;
+      return newGame._id;
     } catch (err) {
       throw new GraphQLError(`Unable to create new game: ${err}`);
     }
