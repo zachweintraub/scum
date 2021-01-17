@@ -1,12 +1,15 @@
-import React, { FC, useContext } from "react";
+import React, { FC, useContext, useState } from "react";
 import { PlayerContext } from "../contexts/Player";
 import { JoinGameButton } from "../components/JoinGameButton";
 import { useQuery } from "@apollo/client";
 import { GetLobbyGamesResponse, GET_LOBBY_GAMES } from "../queries/getGames";
 import { GetGamesArgs } from "../../server/schema/query/getGames";
 import { Portal } from "./Portal";
+import { NewGameForm } from "../components/NewGameForm";
 
 export const Lobby: FC = () => {
+
+  const [ isCreatinNewGame, setIsCreatingNewGame ] = useState<boolean>(false);
 
   const playerContext = useContext(PlayerContext);
 
@@ -21,6 +24,14 @@ export const Lobby: FC = () => {
     return (
       <Portal />
     );
+  }
+
+  const handleClickCreate = () => {
+    setIsCreatingNewGame(true);
+  }
+
+  const handleCancelCreate = () => {
+    setIsCreatingNewGame(false);
   }
   
 
@@ -37,7 +48,9 @@ export const Lobby: FC = () => {
             <p>Current Players: {game.players.map(p => p.name).join(", ")}</p>
             <JoinGameButton
               gameId={game.id}
+              playerId={playerContext.player?.id!}
               text="Join"
+              isRejoin={false}
             />
           </div>
         );
@@ -62,7 +75,9 @@ export const Lobby: FC = () => {
               <p>Current Players: {game.players.map(p => p.name).join(", ")}</p>
               <JoinGameButton
                 gameId={game.id}
+                playerId={playerContext.player?.id!}
                 text="Rejoin"
+                isRejoin={true}
               />
             </div>
         );
@@ -83,10 +98,28 @@ export const Lobby: FC = () => {
     );
   }
 
+  const renderCreateGameButton = () => {
+    if (!isCreatinNewGame) {
+      return (
+        <button
+          onClick={handleClickCreate}
+        >
+          Create New Game
+        </button>
+      );
+    }
+    return (
+      <NewGameForm
+        playerId={playerContext.player?.id!}
+        onCancel={handleCancelCreate}
+      />
+    ) 
+  }
+
   return (
     <div>
       <h3>Welcome, {playerContext?.player?.name ?? "player"}!</h3>
-      <button>Create New Game</button>
+      {renderCreateGameButton()}
       {renderPlayerGames()}
       {renderOpenGames()}
     </div>

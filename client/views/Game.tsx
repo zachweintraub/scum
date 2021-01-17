@@ -9,6 +9,7 @@ import { PlayerHand } from "../components/PlayerHand";
 import { PlayingCard } from "../components/PlayingCard";
 import { PlayTurnArgs, PLAY_TURN } from "../mutations/playTurn";
 import { OtherPlayerHand, OtherPlayers } from "../components/OtherPlayers";
+import { StartGameArgs, StartGameResponse, START_GAME } from "../mutations/startGame";
 //import { ApolloClientContext } from "../contexts/ApolloClient";
 
 /**
@@ -56,8 +57,19 @@ export const Game: FC = () => {
     variables: { id: gameId },
   });
 
+  // Set up the mutation to start the game
+  const [startGame, { loading: startGameLoading, error: startGameError }] = useMutation<StartGameResponse, StartGameArgs>(START_GAME);
+
   // Set up the mutation that allows a player to play their turn
   const [playTurn, { loading: playTurnLoading, error: playTurnError }] = useMutation<boolean, PlayTurnArgs>(PLAY_TURN);
+
+  const handleStartGame = async () => {
+    await startGame({
+      variables: {
+        gameId: data?.game.id!,
+      },
+    });
+  }
 
   // Handler for the action of playing a turn, passed down as a prop
   const handlePlayTurn = async (cards?: Card[]) => {
@@ -78,13 +90,15 @@ export const Game: FC = () => {
   // These objects represent the hands of the other players
   const otherPlayers: OtherPlayerHand[] = useMemo(() => {
     let playerHands: OtherPlayerHand[] = [];
-    if (data?.game.players && activeRound) {
-      for (const hand of activeRound.hands) {
-          const playerName = data?.game.players.find(p => p.id === hand.playerId)?.name ?? "UNKNOWN";
+    if (data?.game.players) {
+      for (const player of data.game.players) {
+          const playerHand = activeRound?.hands.find(hand => hand.playerId === player.id);
+          const playerName = player.name;
           playerHands.push({
             playerName,
-            cardsRemaining: hand.cards.length,
-            isActive: hand.isActive,
+            cardsRemaining: playerHand?.cards.length,
+            isActive: playerHand?.isActive,
+            hasPassed: playerHand?.hasPassed,
           });
       }
     }
@@ -99,51 +113,98 @@ export const Game: FC = () => {
     return activeRound.activePile[activeRound.activePile.length - 1];
   }, [data?.game]);
 
+  // This renders the pre-game view (start game button or waiting message)
+  const renderPreGame = () => {
+    if (data?.game.host.id === playerContext.player?.id) {
+      return (
+        <button
+          onClick={handleStartGame}
+        >
+          start game
+        </button>);
+    }
+    return (<p>waiting for host to start game...</p>)
+  }
+
   // This renders the active pile by displaying the previous turn or a message
   const renderActivePile = () => {
     const turn = previousTurn;
-    if (!turn) {
-      return (<p>Pile is empty...</p>);
-    }
-    return turn.cards.map(card => {
-      return (
-        <>
-          <PlayingCard
-            card={card}
-          />
-        </>
-      );
-    });
+    return (
+      <div
+        className="activePile"
+      >
+        <p>DISCARD PILE:</p>
+        {
+          !!turn
+          ? turn.cards.map(card => {
+            return (
+              <>
+                <PlayingCard
+                  card={card}
+                />
+              </>
+            );
+          })
+          : <p>Pile is empty...</p>
+        }
+      </div>
+    );
+    // if (!turn) {
+    //   return (<p>Pile is empty...</p>);
+    // }
+    // return turn.cards.map(card => {
+    //   return (
+    //     <>
+    //       <PlayingCard
+    //         card={card}
+    //       />
+    //     </>
+    //   );
+    // });
   }
 
   // Return a loading message while the game is being fetched
-  if (gameDataLoading || playTurnLoading) {
+  if (gameDataLoading || playTurnLoading || startGameLoading) {
     return <p>Loading...</p>;
   }
 
   // Return a message if the turn was unable to be played
-  if (playTurnError) {
-    return <p>An error occurred playing turn...</p>;
+  if (playTurnError || startGameError) {
+    return <p>An error occurred...</p>;
   }
 
   // If the game data exists...
   if (data && data.game) {
     return (
       <>
+        <h3
+          className="gameName"
+        >
+          {data.game.name}
+        </h3>
+        <p>PLAYERS:</p>
         <OtherPlayers
           playerHands={otherPlayers}
         />
-        {activeRound && renderActivePile()}
-        <PlayerHand
-          name={playerContext.player.name}
-          cards={getSortedCards(playerHand?.cards)}
-          turnInProgress={!!playerHand?.isActive}
-          playToBeat={previousTurn?.cards}
-          onPlayTurn={handlePlayTurn}
-          powerCard={data.game.gameConfig.powerCardAlias}
-        />
+        {
+          activeRound
+          ? <>
+            {renderActivePile()}
+            <PlayerHand
+              name={playerContext.player.name}
+              cards={getSortedCards(playerHand?.cards)}
+              turnInProgress={!!playerHand?.isActive}
+              playToBeat={previousTurn?.cards}
+              onPlayTurn={handlePlayTurn}
+              powerCard={data.game.gameConfig.powerCardAlias}
+            />
+          </>
+          : <>
+            {renderPreGame()}
+          </>
+        }
       </>
-    );  
+    );
   }
 
   // If none of the above, something is definitely wrong

@@ -1,15 +1,14 @@
-import { GraphQLError, GraphQLFieldConfig, GraphQLNonNull, GraphQLString } from "graphql";
+import { GraphQLBoolean, GraphQLError, GraphQLFieldConfig, GraphQLNonNull, GraphQLString } from "graphql";
 import { Deck } from "../types/deck";
 import { GraphQlContext } from "../..";
 import { ScumDb } from "../../services/scumDb";
-import { GqlRound } from "../types/round";
 
 type Args = {
   gameId: string,
 };
 
 export const startGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
-  type: new GraphQLNonNull(GqlRound),
+  type: new GraphQLNonNull(GraphQLBoolean),
   description: "Creates a new game from a name, host name, and game config variables.",
   args: {
     gameId: {
@@ -60,8 +59,9 @@ export const startGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
         newRound.excessCards = excessCards;
       }
       // Add the round to the game
-      await scumDb.startGame(gameId, newRound);
+      const gameStarted = await scumDb.startGame(gameId, newRound);
       await publishUpdate(gameId);
+      return gameStarted;
     } catch (err) {
       throw new GraphQLError(`There was an issue starting game ${gameId}: ${err}`);
     }

@@ -3,8 +3,9 @@ import "./OtherPlayers.scss";
 
 export type OtherPlayerHand = {
   playerName: string;
-  cardsRemaining: number;
-  isActive: boolean;
+  cardsRemaining?: number;
+  isActive?: boolean;
+  hasPassed?: boolean;
 }
 
 type OtherPlayersProps = {
@@ -15,10 +16,10 @@ export const OtherPlayers: FC<OtherPlayersProps> = ({ playerHands }) => {
   const renderOtherPlayerHand = (hand: OtherPlayerHand) => {
     return (
       <div
-        className={`otherPlayerHand${hand.isActive ? " isActive" : ""}`}
+        className={`otherPlayerHand${hand.isActive ? " isActive" : ""}${hand.hasPassed ? " hasPassed" : ""}`}
       >
         <p>{hand.playerName}</p>
-        <p>{hand.cardsRemaining}</p>
+        {hand.cardsRemaining && <p>{hand.cardsRemaining}</p>}
       </div>
     );
   }
