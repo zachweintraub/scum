@@ -1,6 +1,7 @@
 import React, { FC, useMemo, useState } from "react";
 import { Card } from "../queries/getGame";
 import { PlayerCard } from "./PlayerCard";
+import "./PlayerHand.scss";
 
 type PlayerHandProps = {
   name: string;
@@ -114,11 +115,13 @@ export const PlayerHand: FC<PlayerHandProps> = ({
     return <p>There should be cards here...</p>
   }
   return (
-    <div>
+    <>
       <p>YOUR HAND ({name}):</p>
-      {renderCards(cards)}
+      <div className="playerHand">
+        {renderCards(cards)}
+      </div>
       {turnInProgress && playButton}
       {turnInProgress && renderPassButton()}
-    </div>
+    </>
   );
 };

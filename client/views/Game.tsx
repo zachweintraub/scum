@@ -8,7 +8,7 @@ import { Portal } from "./Portal";
 import { PlayerHand } from "../components/PlayerHand";
 import { PlayingCard } from "../components/PlayingCard";
 import { PlayTurnArgs, PLAY_TURN } from "../mutations/playTurn";
-import { ApolloClientContext } from "../contexts/ApolloClient";
+//import { ApolloClientContext } from "../contexts/ApolloClient";
 
 /**
  * TODO: Idea for pausing on cards played before clearing the active pile...
@@ -27,7 +27,7 @@ export const Game: FC = () => {
 
   // Bring in the contexts we need
   const playerContext = useContext(PlayerContext);
-  const apolloClientContext = useContext(ApolloClientContext);
+  //const apolloClientContext = useContext(ApolloClientContext);
 
   // Prompt player info if none exists
   if (!playerContext?.player) {
@@ -37,9 +37,9 @@ export const Game: FC = () => {
   }
 
   // Set up the WS connection using the apollo client context
-  if (apolloClientContext && !apolloClientContext.wsLinkInitiated && gameId) {
-    apolloClientContext.initiateWsLink(playerContext.player.id, gameId);
-  }
+  // if (apolloClientContext && !apolloClientContext.wsLinkInitiated && gameId) {
+  //   apolloClientContext.initiateWsLink(playerContext.player.id, gameId);
+  // }
 
 
   

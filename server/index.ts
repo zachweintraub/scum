@@ -55,12 +55,12 @@ async function main() {
     schema,
     context,
     playground: true,
-    subscriptions: {
-      onConnect: (params: {playerId: string, gameId: string}) => {
-        console.log(params.playerId, params.gameId);
-      },
-      onDisconnect: (websocket, context) => console.log(context),
-    },
+    // subscriptions: {
+    //   onConnect: (params: {playerId: string, gameId: string}) => {
+    //     console.log(params.playerId, params.gameId);
+    //   },
+    //   onDisconnect: (websocket, context) => console.log(context),
+    // },
   });
 
   server.applyMiddleware({ app });

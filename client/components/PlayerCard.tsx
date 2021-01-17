@@ -1,5 +1,6 @@
 import React, { FC } from "react";
 import { Card } from "../queries/getGame";
+import "./PlayerCard.scss";
 
 type PlayerCardProps = {
   card: Card;
@@ -21,6 +22,7 @@ export const PlayerCard: FC<PlayerCardProps> = ({ card, isSelected, onSelectCard
 
   return (
     <p
+      className={`playerCard${isSelected ? " selectedCard" : ""}`}
       onClick={handleToggleSelectCard}
     >
       {card.alias}
