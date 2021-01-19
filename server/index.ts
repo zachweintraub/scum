@@ -86,6 +86,7 @@ async function main() {
   // Start listening
   httpServer.listen(port, () => {
     console.log("Server is listening on ", server.graphqlPath);
+    console.log("Using port ", port);
   });
 
 }
