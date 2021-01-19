@@ -6,7 +6,7 @@ import { getMainDefinition } from "@apollo/client/utilities";
 
 declare const API_URL: string;
 
-const API_URL_WS = API_URL.replace("http://", "ws://");
+const API_URL_WS = API_URL.replace("http://", "wss://");
 
 const httpLink = new HttpLink({
   uri: API_URL,
