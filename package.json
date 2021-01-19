@@ -4,7 +4,7 @@
   "description": "Online multiplayer version of the card game.",
   "main": "index.ts",
   "scripts": {
-    "start": "node app.js",
+    "start": "node public/server/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npm-run-all -p -l watch:*",
     "watch": "npm-run-all -p -l watch:*",
