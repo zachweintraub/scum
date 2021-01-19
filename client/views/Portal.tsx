@@ -1,7 +1,8 @@
 import React, { FC, useContext, useEffect, useState } from "react";
-import { useLazyQuery } from "@apollo/client";
+import { useLazyQuery, useMutation } from "@apollo/client";
 import { PlayerContext } from "../contexts/Player";
 import { GetPlayerResponse, GET_PLAYER } from "../queries/getPlayer";
+import { CreatePlayerArgs, CreatePlayerResponse, CREATE_PLAYER } from "../mutations/createPlayer";
 import { GetPlayerArgs } from "../../server/schema/query/getPlayer";
 
 export const Portal: FC = () => {
@@ -17,6 +18,12 @@ export const Portal: FC = () => {
     error: getPlayerError,
     loading: getPlayerLoading,
   }] = useLazyQuery<GetPlayerResponse, GetPlayerArgs>(GET_PLAYER);
+
+  const [ createPlayer, {
+    data: createPlayerData,
+    error: createPlayerError,
+    loading: createPlayerLoading
+  }] = useMutation<CreatePlayerResponse, CreatePlayerArgs>(CREATE_PLAYER);
 
   const handleChooseNewPlayer = () => {
     setEnteringNewName(true);
@@ -38,13 +45,23 @@ export const Portal: FC = () => {
         },
       });
     }
+    if (enteringNewName) {
+      createPlayer({
+        variables: {
+          name: enteredNameText,
+        },
+      });
+    }
   };
 
   useEffect(() => {
     if (playerContext?.onSetPlayer && getPlayerData?.player) {
       playerContext.onSetPlayer(getPlayerData.player);
     }
-  }, [getPlayerData]);
+    if (playerContext?.onSetPlayer && createPlayerData?.createPlayer) {
+      playerContext.onSetPlayer(createPlayerData.createPlayer);
+    }
+  }, [getPlayerData, createPlayerData]);
 
   const handleCancel = () => {
     setEnteringNewName(false);
@@ -57,9 +74,9 @@ export const Portal: FC = () => {
     if (getPlayerError) {
       errorText = getPlayerError.message;
     }
-    // if (createPlayerError) {
-    //   errorText = createPlayerError.message;
-    // }
+    if (createPlayerError) {
+      errorText = createPlayerError.message;
+    }
     return (
       <p>{errorText}</p>
     );
@@ -96,7 +113,7 @@ export const Portal: FC = () => {
     );
   };
 
-  if (getPlayerLoading) {
+  if (getPlayerLoading || createPlayerLoading) {
     return (
       <p>Loading...</p>
     );
