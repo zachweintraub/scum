@@ -10,6 +10,7 @@ import { PlayingCard } from "../components/PlayingCard";
 import { PlayTurnArgs, PLAY_TURN } from "../mutations/playTurn";
 import { OtherPlayerHand, OtherPlayers } from "../components/OtherPlayers";
 import { StartGameArgs, StartGameResponse, START_GAME } from "../mutations/startGame";
+import { ActionLog } from "../components/ActionLog";
 //import { ApolloClientContext } from "../contexts/ApolloClient";
 
 /**
@@ -186,6 +187,7 @@ export const Game: FC = () => {
         <OtherPlayers
           playerHands={otherPlayers}
         />
+        <ActionLog actions={data.game.actionLog} />
         {
           activeRound
           ? <>
