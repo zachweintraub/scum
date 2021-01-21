@@ -5,6 +5,7 @@ export type OtherPlayerHand = {
   playerName: string;
   cardsRemaining?: number;
   isActive?: boolean;
+  isOnline?: boolean;
   hasPassed?: boolean;
 }
 
@@ -16,7 +17,7 @@ export const OtherPlayers: FC<OtherPlayersProps> = ({ playerHands }) => {
   const renderOtherPlayerHand = (hand: OtherPlayerHand) => {
     return (
       <div
-        className={`otherPlayerHand${hand.isActive ? " isActive" : ""}${hand.hasPassed ? " hasPassed" : ""}`}
+        className={`otherPlayerHand${hand.isActive ? " isActive" : ""}${hand.hasPassed ? " hasPassed" : ""}${hand.isOnline ? " isOnline" : ""}`}
       >
         <p>{hand.playerName}</p>
         {hand.cardsRemaining && <p>{hand.cardsRemaining}</p>}

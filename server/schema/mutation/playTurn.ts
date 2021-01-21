@@ -36,11 +36,9 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     if (!rounds) {
       throw new GraphQLError(`OH NO! No rounds found for game ${gameId}`);
     }
-    // Grab the players from the DB
-    const players = await scumDb.getPlayers(game.playerIds);
-    if (!players) {
-      throw new GraphQLError(`OH NO! There was an issue getting the players for game ${gameId}`);
-    }
+    // Grab the players from the game object
+    const players = game.gamePlayers;
+    
     // Get the current player's name
     let playerName = getPlayerName(players, playerId);
 

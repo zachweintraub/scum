@@ -30,7 +30,7 @@ export const addPlayerToGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
       if (!player) {
         throw new Error(`No player found with ID ${playerId}`);
       }      
-      await scumDb.addPlayerToGame(gameId, playerId);
+      await scumDb.addPlayerToGame(gameId, player);
       await publishUpdate(gameId);
       return true;
     } catch (err) {

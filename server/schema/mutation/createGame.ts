@@ -71,8 +71,12 @@ export const createGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     };
 
     // Finally, create the game!
-    try {      
-      const newGame = await scumDb.createGame(name, hostId, gameConfig);
+    try {
+      const host = await scumDb.getPlayerById(hostId);
+      if (!host) {
+        throw new Error("host not found");
+      }
+      const newGame = await scumDb.createGame(name, host, gameConfig);
       return newGame._id;
     } catch (err) {
       throw new GraphQLError(`Unable to create new game: ${err}`);

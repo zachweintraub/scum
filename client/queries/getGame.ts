@@ -76,6 +76,7 @@ export const gameFields = `
   players {
     id
     name
+    online
   }
   rounds {
     id

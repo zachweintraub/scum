@@ -1,4 +1,4 @@
-import { GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
+import { GraphQLBoolean, GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
 import { ScumDb } from "../../services/scumDb";
 
 export const GqlPlayer = new GraphQLObjectType<ScumDb.PlayerDBO, {}>({
@@ -14,6 +14,10 @@ export const GqlPlayer = new GraphQLObjectType<ScumDb.PlayerDBO, {}>({
       type: new GraphQLNonNull(GraphQLString),
       description: "The player's name.",
       resolve: ({ name }) => name,
+    },
+    online: {
+      type: GraphQLBoolean,
+      resolve: ({ online }) => online ?? false,
     },
   },
 });

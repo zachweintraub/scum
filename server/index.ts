@@ -55,12 +55,28 @@ async function main() {
     schema,
     context,
     playground: true,
-    // subscriptions: {
-    //   onConnect: (params: {playerId: string, gameId: string}) => {
-    //     console.log(params.playerId, params.gameId);
-    //   },
-    //   onDisconnect: (websocket, context) => console.log(context),
-    // },
+    subscriptions: {
+      onConnect: async (params: {playerId: string, gameId: string}) => {
+        if (params) {
+          const { gameId, playerId } = params;
+          await scumDb.setPlayerOnlineStatus(gameId, playerId, true);
+          await context.publishUpdate(gameId);
+          return {
+            gameId,
+            playerId,
+          };
+        }
+        return;
+      },
+      onDisconnect: async (_, connContext) => {
+        const params: {playerId: string, gameId: string} = await connContext.initPromise;
+        if (params) {
+          const { gameId, playerId } = params;
+          await scumDb.setPlayerOnlineStatus(gameId, playerId, false);
+          await context.publishUpdate(gameId);
+        }
+      },
+    },
   });
 
   server.applyMiddleware({ app });

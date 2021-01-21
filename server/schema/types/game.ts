@@ -39,18 +39,7 @@ export const GqlGame = new GraphQLObjectType<ScumDb.GameDBO, GraphQlContext>({
     players: {
       type: new GraphQLNonNull(new GraphQLList(GqlPlayer)),
       description: "All of the players in the game.",
-      async resolve({ _id, playerIds }, _, { scumDb }) {
-        try {
-          const players = await scumDb.getPlayers(playerIds);
-          
-          if (!Array.isArray(players)) {
-            throw new Error(`No players found for game ${_id}`);
-          }
-          return players;
-        } catch (err) {
-          throw new GraphQLError(`Unable to resolve game players: ${err}`);
-        }
-      },
+      resolve: ({ gamePlayers }) => gamePlayers,
     },
     rounds: {
       type: new GraphQLList(GqlRound),

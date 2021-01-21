@@ -14,16 +14,16 @@ export class ScumDb {
   /**
    * Create a new game 
    */
-  public async createGame(name: string, hostId: string, gameConfig: ScumDb.GameConfigDBO): Promise<ScumDb.GameDBO> {
+  public async createGame(name: string, host: ScumDb.PlayerDBO, gameConfig: ScumDb.GameConfigDBO): Promise<ScumDb.GameDBO> {
     
     const createdAt = new Date().toISOString();
 
     const thisGame: ScumDb.GameDBO = {
       _id: new ObjectID(),
       name,
-      hostId,
+      hostId: host._id.toHexString(),
       gameConfig,
-      playerIds: [hostId],
+      gamePlayers: [host],
       createdAt,
       actionLog: [],
     };
@@ -34,13 +34,13 @@ export class ScumDb {
   /**
    * Add a player to a game
    */
-  public async addPlayerToGame(gameId: string, playerId: string) {
+  public async addPlayerToGame(gameId: string, player: ScumDb.PlayerDBO) {
     const thisGameId = new ObjectID(gameId);
     await this.db.collection("games").updateOne(
       { _id: thisGameId, startedAt: { $exists: false } },
-      { $push: { playerIds: playerId } },  
+      { $push: { gamePlayers: player } },  
     );
-    return playerId;
+    return player._id;
   }
 
   /**
@@ -95,7 +95,8 @@ export class ScumDb {
    * Get all games that include a given player
    */
   public async getGamesForPlayer(playerId: string): Promise<ScumDb.GameDBO[]> {
-    const games = await this.db.collection("games").find({ playerIds: playerId }).toArray();
+    const thisPlayerId = new ObjectID(playerId);
+    const games = await this.db.collection("games").find({ "gamePlayers._id": { $eq: thisPlayerId } }).toArray();
     return games;
   }
 
@@ -184,6 +185,22 @@ export class ScumDb {
     await this.db.collection("rounds").replaceOne({ _id: thisRoundId }, round);
     return true;
   }
+
+  /**
+   * Set a player's online status for a given game
+   */
+  public async setPlayerOnlineStatus(gameId: string, playerId: string, online: boolean) {
+    if (!gameId || !playerId) {
+      console.log("cannot set player's online status without game and player ID");
+      return;
+    }
+    const thisGameId = new ObjectID(gameId);
+    const thisPlayerId = new ObjectID(playerId);
+    await this.db.collection("games").updateOne(
+      { _id: thisGameId, "gamePlayers._id": thisPlayerId },
+      { $set: { "gamePlayers.$.online": online } },
+    );
+  }
 }
 
 export namespace ScumDb {
@@ -200,11 +217,16 @@ export namespace ScumDb {
     powerCardAlias: string,
   };
 
+  export type GamePlayerDBO = {
+    playerId: string,
+    online: boolean,
+  };
+
   export type GameDBO = {
     _id: ObjectID,
     name: string,
     hostId: string,
-    playerIds: string[],
+    gamePlayers: PlayerDBO[],
     gameConfig: GameConfigDBO,
     createdAt?: string;
     startedAt?: string;
@@ -215,6 +237,7 @@ export namespace ScumDb {
   export type PlayerDBO = {
     _id: ObjectID,
     name: string,
+    online?: boolean,
   };
 
   export type CardDBO = {

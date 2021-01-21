@@ -11,7 +11,7 @@ import { PlayTurnArgs, PLAY_TURN } from "../mutations/playTurn";
 import { OtherPlayerHand, OtherPlayers } from "../components/OtherPlayers";
 import { StartGameArgs, StartGameResponse, START_GAME } from "../mutations/startGame";
 import { ActionLog } from "../components/ActionLog";
-//import { ApolloClientContext } from "../contexts/ApolloClient";
+import { ApolloClientContext } from "../contexts/ApolloClient";
 
 /**
  * TODO: Idea for pausing on cards played before clearing the active pile...
@@ -30,7 +30,7 @@ export const Game: FC = () => {
 
   // Bring in the contexts we need
   const playerContext = useContext(PlayerContext);
-  //const apolloClientContext = useContext(ApolloClientContext);
+  const apolloClientContext = useContext(ApolloClientContext);
 
   // Prompt player info if none exists
   if (!playerContext?.player) {
@@ -40,9 +40,9 @@ export const Game: FC = () => {
   }
 
   // Set up the WS connection using the apollo client context
-  // if (apolloClientContext && !apolloClientContext.wsLinkInitiated && gameId) {
-  //   apolloClientContext.initiateWsLink(playerContext.player.id, gameId);
-  // }
+  if (apolloClientContext && !apolloClientContext.wsLinkInitiated && gameId) {
+    apolloClientContext.initiateWsLink(playerContext.player.id, gameId);
+  }
 
 
   // Query for the whole game
@@ -94,9 +94,9 @@ export const Game: FC = () => {
     if (data?.game.players) {
       for (const player of data.game.players) {
           const playerHand = activeRound?.hands.find(hand => hand.playerId === player.id);
-          const playerName = player.name;
           playerHands.push({
-            playerName,
+            playerName: player.name,
+            isOnline: player.online,
             cardsRemaining: playerHand?.cards.length,
             isActive: playerHand?.isActive,
             hasPassed: playerHand?.hasPassed,

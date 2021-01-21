@@ -3,6 +3,7 @@ import React, { createContext, FC, useState } from "react";
 export type Player = {
   id: string;
   name: string;
+  online: boolean;
 };
 
 export type PlayerCtx = {
