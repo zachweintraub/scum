@@ -82,7 +82,7 @@ export const PlayerHand: FC<PlayerHandProps> = ({
   const renderCards = (cards: Card[]) => {
     return cards.map((card, index) => (
       <PlayerCard
-        key={index}
+        key={`playerCard${index}`}
         card={card}
         isSelected={selectedCards.includes(card)}
         onSelectCard={handleSelectCard}

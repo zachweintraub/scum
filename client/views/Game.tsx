@@ -1,4 +1,4 @@
-import React, { FC, useContext, useMemo } from "react";
+import React, { FC, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { PlayerContext } from "../contexts/Player";
 import { useMutation, useQuery } from "@apollo/client";
@@ -32,19 +32,6 @@ export const Game: FC = () => {
   const playerContext = useContext(PlayerContext);
   //const apolloClientContext = useContext(ApolloClientContext);
 
-  // Prompt player info if none exists
-  if (!playerContext?.player) {
-    return (
-      <Portal />
-    );
-  }
-
-  // Set up the WS connection using the apollo client context
-  // if (apolloClientContext && !apolloClientContext.wsLinkInitiated && gameId) {
-  //   apolloClientContext.initiateWsLink(playerContext.player.id, gameId);
-  // }
-
-
   // Query for the whole game
   const { subscribeToMore, data, loading: gameDataLoading } = useQuery<GetGameResponse, { id: string }>(GET_GAME, {
     variables: {
@@ -52,17 +39,25 @@ export const Game: FC = () => {
     },
   });
 
+  
+  // Set up the mutation to start the game
+  const [startGame, { loading: startGameLoading, error: startGameError }] = useMutation<StartGameResponse, StartGameArgs>(START_GAME);
+  
+  // Set up the mutation that allows a player to play their turn
+  const [playTurn, { loading: playTurnLoading, error: playTurnError }] = useMutation<boolean, PlayTurnArgs>(PLAY_TURN);
+
+  // Prompt player info if none exists
+  if (!playerContext?.player) {
+    return (
+      <Portal />
+    );
+  }
+  
   // Initiate subscription to the game
   subscribeToMore({
     document: SUBSCRIBE_TO_GAME,
     variables: { id: gameId },
   });
-
-  // Set up the mutation to start the game
-  const [startGame, { loading: startGameLoading, error: startGameError }] = useMutation<StartGameResponse, StartGameArgs>(START_GAME);
-
-  // Set up the mutation that allows a player to play their turn
-  const [playTurn, { loading: playTurnLoading, error: playTurnError }] = useMutation<boolean, PlayTurnArgs>(PLAY_TURN);
 
   const handleStartGame = async () => {
     await startGame({
@@ -89,7 +84,7 @@ export const Game: FC = () => {
   const playerHand = activeRound?.hands.find(h => h.playerId === playerContext?.player?.id);
 
   // These objects represent the hands of the other players
-  const otherPlayers: OtherPlayerHand[] = useMemo(() => {
+  const otherPlayers = (): OtherPlayerHand[] => {
     let playerHands: OtherPlayerHand[] = [];
     if (data?.game.players) {
       for (const player of data.game.players) {
@@ -104,15 +99,15 @@ export const Game: FC = () => {
       }
     }
     return playerHands;
-  }, [data?.game]);
+  };
 
   // This is the last turn played to the active pile
-  const previousTurn = useMemo(() => {
+  const previousTurn = () => {
     if (!activeRound || !activeRound.activePile || activeRound.activePile.length < 1) {
       return undefined;
     }
     return activeRound.activePile[activeRound.activePile.length - 1];
-  }, [data?.game]);
+  };
 
   // This renders the pre-game view (start game button or waiting message)
   const renderPreGame = () => {
@@ -129,7 +124,7 @@ export const Game: FC = () => {
 
   // This renders the active pile by displaying the previous turn or a message
   const renderActivePile = () => {
-    const turn = previousTurn;
+    const turn = previousTurn();
     return (
       <div
         className="activePile"
@@ -137,31 +132,18 @@ export const Game: FC = () => {
         <p>DISCARD PILE:</p>
         {
           !!turn
-          ? turn.cards.map(card => {
+          ? turn.cards.map((card, index) => {
             return (
-              <>
-                <PlayingCard
-                  card={card}
+              <PlayingCard
+                key={`activePileCard${index}`}
+                card={card}
                 />
-              </>
             );
           })
           : <p>Pile is empty...</p>
         }
       </div>
     );
-    // if (!turn) {
-    //   return (<p>Pile is empty...</p>);
-    // }
-    // return turn.cards.map(card => {
-    //   return (
-    //     <>
-    //       <PlayingCard
-    //         card={card}
-    //       />
-    //     </>
-    //   );
-    // });
   }
 
   // Return a loading message while the game is being fetched
@@ -185,7 +167,7 @@ export const Game: FC = () => {
         </h3>
         <p>PLAYERS:</p>
         <OtherPlayers
-          playerHands={otherPlayers}
+          playerHands={otherPlayers()}
         />
         <ActionLog actions={data.game.actionLog} />
         {
@@ -196,7 +178,7 @@ export const Game: FC = () => {
               name={playerContext.player.name}
               cards={getSortedCards(playerHand?.cards)}
               turnInProgress={!!playerHand?.isActive}
-              playToBeat={previousTurn?.cards}
+              playToBeat={previousTurn()?.cards}
               onPlayTurn={handlePlayTurn}
               powerCard={data.game.gameConfig.powerCardAlias}
             />
