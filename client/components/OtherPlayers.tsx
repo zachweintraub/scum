@@ -13,9 +13,10 @@ type OtherPlayersProps = {
 }
 
 export const OtherPlayers: FC<OtherPlayersProps> = ({ playerHands }) => {
-  const renderOtherPlayerHand = (hand: OtherPlayerHand) => {
+  const renderOtherPlayerHand = (hand: OtherPlayerHand, index: number) => {
     return (
       <div
+        key={`otherPlayerHand${index}`}
         className={`otherPlayerHand${hand.isActive ? " isActive" : ""}${hand.hasPassed ? " hasPassed" : ""}`}
       >
         <p>{hand.playerName}</p>

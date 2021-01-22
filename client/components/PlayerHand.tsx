@@ -52,26 +52,29 @@ export const PlayerHand: FC<PlayerHandProps> = ({
   }, [playToBeat]);
 
   const canPlay = useMemo(() => {
+    // If it's not your turn you can't play
     if (!turnInProgress) {
       return false;
     }
+    // If you haven't selected any cards you can't play
     if (selectedCards.length < 1) {
       return false;
     }
-    if (!playToBeat) {
-      return true;
-    }
+    // If you've selected the power card and only the power card, go for it
     if (selectedCards.length === 1 && selectedCards[0].alias === powerCard) {
       return true;
     }
-    if (playToBeat.length === selectedCards.length) {      
+    // If there is no play to beat, or your selected cards are of the same quantity, do more checks...
+    if (!playToBeat || playToBeat.length === selectedCards.length) {   
+      // This looping check returns false if the selected cards vary in length   
       const baseRank = selectedCards[0].rank;
       for (const card of selectedCards) {
         if (card.rank !== baseRank) {
           return false;
         }
       }
-      return baseRank >= playToBeat[0].rank;
+      // If the above check passes, you can play if there is no play to beat, or if your selected cards are the same or higher
+      return !playToBeat || baseRank >= playToBeat[0].rank;
     }
     return false;
   }, [turnInProgress, selectedCards.length, playToBeat]);

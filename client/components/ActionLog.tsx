@@ -14,9 +14,9 @@ export const ActionLog: FC<ActionLogProps> = ({ actions }) => {
     return actions.slice(actions.length - 3);
   }, [actions]);
 
-  const renderAction = (action: ActionLogItem) => {
+  const renderAction = (action: ActionLogItem, index: number) => {
     return (
-      <p>{action.message}</p>
+      <p key={`action${index}`}>{action.message}</p>
     )
   }
 
