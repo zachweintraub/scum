@@ -76,6 +76,8 @@ export const Game: FC = () => {
     await playTurn({ variables });
   };
 
+  const gameHasStarted = !!data?.game.startedAt;
+
   // This is the current active round pulled from the game
   const activeRound = data?.game.rounds?.find(r => r.isActive);
 
