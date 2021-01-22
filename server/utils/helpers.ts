@@ -75,9 +75,6 @@ export function lastPlayShouldClearPile(activePile: ScumDb.TurnDBO[], gameConfig
   }
 
   // If the count to explode the pile is divisible by the number of cards in the current play, keep checking...
-
-  // BIG KNOWN BUG! playing doubles on doubles blows it up no matter what :(
-
   if (explodePileCount % lastPlayedTurn.cards.length === 0) {
     // Grab the rank of the first card as our base rank to match
     let rankToMatch = lastPlayedTurn.cards[0].rank;
@@ -117,7 +114,7 @@ export function lastPlayShouldClearPile(activePile: ScumDb.TurnDBO[], gameConfig
 export function getNextRank(hands: ScumDb.HandDBO[]) {
   let highestRank = 0;
   for (const hand of hands) {
-    if (!!hand.endRank && hand.endRank >= highestRank) {
+    if (typeof hand.endRank === "number" && hand.endRank >= highestRank) {
       highestRank = hand.endRank + 1;
     }
   }
@@ -150,7 +147,7 @@ export function roundShouldEnd(round: ScumDb.RoundDBO): boolean {
   // Count up the hands left in the round without an end rank
   let unrankedPlayers = 0;
   for (const hand of round.hands) {
-    if (!hand.endRank) {
+    if (typeof hand.endRank !== "number") {
       unrankedPlayers++;
     }
   }
@@ -172,7 +169,7 @@ export function getNextHandIndex(hands: ScumDb.HandDBO[], targetHandIndex: numbe
     
     // Check if they are eligible to have a turn now
     const isEligible = !hands[handIndex].hasPassed
-      && !hands[handIndex].endRank
+      && typeof hands[handIndex].endRank !== "number"
       && hands[handIndex].cards.length > 0;
     // If so, return the index of their hand
     if (isEligible) {

@@ -11,7 +11,6 @@ import { PlayTurnArgs, PLAY_TURN } from "../mutations/playTurn";
 import { OtherPlayerHand, OtherPlayers } from "../components/OtherPlayers";
 import { StartGameArgs, StartGameResponse, START_GAME } from "../mutations/startGame";
 import { ActionLog } from "../components/ActionLog";
-//import { ApolloClientContext } from "../contexts/ApolloClient";
 
 /**
  * TODO: Idea for pausing on cards played before clearing the active pile...
@@ -84,6 +83,7 @@ export const Game: FC = () => {
   const playerHand = activeRound?.hands.find(h => h.playerId === playerContext?.player?.id);
 
   // These objects represent the hands of the other players
+  // Needs a refactor to loop over hands rather than players to ensure the order looks right
   const otherPlayers = (): OtherPlayerHand[] => {
     let playerHands: OtherPlayerHand[] = [];
     if (data?.game.players) {

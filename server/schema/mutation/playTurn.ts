@@ -68,7 +68,7 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
       console.log(currentRound.hands);
       throw new GraphQLError(`No hand found for player ${playerId}!`);
     }
-    // If there are no cards to play, play them
+    // If there are cards to play, play them
     if (!!cardsToPlay && cardsToPlay.length > 0) {
       // Make the current play
       currentRound = playFromHandToPile(currentRound, cardsToPlay, targetHandIndex, playerId);
@@ -103,7 +103,7 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     if (roundShouldEnd(currentRound)) {
       // Make sure all players have a rank
       for (let i = 0; i < currentRound.hands.length; i++) {
-        if (!currentRound.hands[i].endRank) {
+        if (typeof currentRound.hands[i].endRank !== "number") {
           currentRound.hands[i].endRank = getNextRank(currentRound.hands);
         }
       }
@@ -115,7 +115,7 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
 
       // If no one was determined eligible, reset some things and try again
       if (nextHandIndex === -1) {
-        // currentRound = clearPile(currentRound);
+        currentRound = clearPile(currentRound);
         currentRound = resetHasPassedFlags(currentRound);
         nextHandIndex = getNextHandIndex(currentRound.hands, targetHandIndex);
         if (nextHandIndex === -1) {
