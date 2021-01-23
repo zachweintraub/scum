@@ -59,10 +59,14 @@ export class ScumDb {
   /**
    * Add a new round to an existing game 
    */
-  public async createRound(round: ScumDb.RoundDBO): Promise<boolean> {
-    round._id = new ObjectID();
-
-    await this.db.collection("rounds").insertOne(round);
+  public async createRound(round: Omit<ScumDb.RoundDBO, "_id">): Promise<boolean> {
+    // Add an ID before inserting
+    const newRound: ScumDb.RoundDBO = {
+      _id: new ObjectID(),
+      ...round,
+    };
+    // Insert
+    await this.db.collection("rounds").insertOne(newRound);
     return true;
   }
 
@@ -225,6 +229,7 @@ export namespace ScumDb {
 
   export type HandDBO = {
     playerId: string,
+    readyToPlay: boolean,
     cards: CardDBO[],
     startRank?: number,
     endRank?: number,

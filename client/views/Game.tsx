@@ -58,12 +58,18 @@ export const Game: FC = () => {
     variables: { id: gameId },
   });
 
+  // Trigger mutation to start the game
   const handleStartGame = async () => {
     await startGame({
       variables: {
         gameId: data?.game.id!,
       },
     });
+  }
+
+  // Trigger mutation to start a new round
+  const handleStartNewRound = async () => {
+    return;
   }
 
   // Handler for the action of playing a turn, passed down as a prop
@@ -76,6 +82,7 @@ export const Game: FC = () => {
     await playTurn({ variables });
   };
 
+  // Flag to determine whether the game has started
   const gameHasStarted = !!data?.game.startedAt;
 
   // This is the current active round pulled from the game
@@ -104,7 +111,7 @@ export const Game: FC = () => {
   };
 
   // This is the last turn played to the active pile
-  const previousTurn = () => {
+  const getPreviousTurn = () => {
     if (!activeRound || !activeRound.activePile || activeRound.activePile.length < 1) {
       return undefined;
     }
@@ -112,21 +119,27 @@ export const Game: FC = () => {
   };
 
   // This renders the pre-game view (start game button or waiting message)
-  const renderPreGame = () => {
+  const renderInactiveGame = () => {
+    const continueAction = gameHasStarted
+      ? "start new round"
+      : "start game";
+    const handleContinueAction = gameHasStarted
+      ? handleStartNewRound
+      : handleStartGame;
     if (data?.game.host.id === playerContext.player?.id) {
       return (
         <button
-          onClick={handleStartGame}
+          onClick={handleContinueAction}
         >
-          start game
+          {continueAction}
         </button>);
     }
-    return (<p>waiting for host to start game...</p>)
+    return (<p>waiting for host to {continueAction}...</p>)
   }
 
   // This renders the active pile by displaying the previous turn or a message
   const renderActivePile = () => {
-    const turn = previousTurn();
+    const turn = getPreviousTurn();
     return (
       <div
         className="activePile"
@@ -180,13 +193,13 @@ export const Game: FC = () => {
               name={playerContext.player.name}
               cards={getSortedCards(playerHand?.cards)}
               turnInProgress={!!playerHand?.isActive}
-              playToBeat={previousTurn()?.cards}
+              playToBeat={getPreviousTurn()?.cards}
               onPlayTurn={handlePlayTurn}
               powerCard={data.game.gameConfig.powerCardAlias}
             />
           </>
           : <>
-            {renderPreGame()}
+            {renderInactiveGame()}
           </>
         }
       </>
@@ -194,7 +207,7 @@ export const Game: FC = () => {
   }
 
   // If none of the above, something is definitely wrong
-  return <p>idk what's wrong</p>;
+  return <p>something has gone terribly wrong...</p>;
 
 };
 

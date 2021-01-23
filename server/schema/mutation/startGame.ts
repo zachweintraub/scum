@@ -9,7 +9,7 @@ type Args = {
 
 export const startGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
   type: new GraphQLNonNull(GraphQLBoolean),
-  description: "Creates a new game from a name, host name, and game config variables.",
+  description: "Starts an existing game and creates the first round",
   args: {
     gameId: {
       type: new GraphQLNonNull(GraphQLString),
@@ -50,6 +50,7 @@ export const startGame: GraphQLFieldConfig<null, GraphQlContext, Args> = {
         newRound.hands.push({
           playerId: playerIds[i],
           cards,
+          readyToPlay: true,
           isActive: isFirst,
           hasPassed: false,
         });
