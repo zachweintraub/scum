@@ -41,6 +41,15 @@ export const passCardsToPlayer: GraphQLFieldConfig<null, GraphQlContext, PassCar
       // Grab the game's rounds from the DB
       const rounds = await scumDb.getRounds(gameId);
 
+      // Grab the two players so we know their names
+      const players = await scumDb.getPlayers([givingPlayerId, receivingPlayerId]);
+      const givingPlayer = players.find(p => p._id.toHexString() === givingPlayerId);
+      const receivingPlayer = players.find(p => p._id.toHexString() === receivingPlayerId);
+
+      if (!givingPlayer || !receivingPlayer) {
+        throw new Error("unable to retrieve giving or receiving player from DB");
+      }
+
       // Grab the current round of this game
       let currentRound = rounds.find(r => {
         return !!r.startedAt && !r.endedAt;
@@ -62,6 +71,7 @@ export const passCardsToPlayer: GraphQLFieldConfig<null, GraphQlContext, PassCar
       // Update the round in the DB
       const cardsPassedSuccessful = await scumDb.updateRound(currentRound);
       // Broadcast the fact that the game has changed
+      await scumDb.logAction(gameId, `${givingPlayer.name} passed ${cardsToPass.length} cards to ${receivingPlayer.name}`);
       await publishUpdate(gameId);
 
       // Return the result (true)

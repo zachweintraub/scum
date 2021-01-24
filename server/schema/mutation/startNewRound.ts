@@ -55,7 +55,7 @@ export const startNewRound: GraphQLFieldConfig<null, GraphQlContext, Args> = {
       // Loop over the hands in the previous round and pull out everyone's rank
       for (const hand of previousRound.hands) {
         // Throw an error if someone didn't get ranked
-        if (!hand.endRank) {
+        if (typeof hand.endRank !== "number") {
           throw new Error(`player ${hand.playerId} was not assigned a rank in the previous round`);
         }
         // Store their rank in the lookup
@@ -123,6 +123,7 @@ export const startNewRound: GraphQLFieldConfig<null, GraphQlContext, Args> = {
 
       // Add the round to the game
       const roundCreated = await scumDb.createRound(newRound);
+      await scumDb.logAction(gameId, "a new round begins!");
       // Publish the event
       await publishUpdate(gameId);
       // Return true/false

@@ -108,6 +108,20 @@ export const PlayerHand: FC<PlayerHandProps> = ({
     return !readyToPlay
     && selectedCards.length === cardsNeededToPass;
   }, [readyToPlay, selectedCards, cardsNeededToPass]);
+
+  const handleClickPlay = () => {
+    onPlayTurn(selectedCards);
+    setSelectedCards([]);
+  }
+  
+  const handleClickPass = () => {
+    onPlayTurn();
+  }
+  
+  const handleClickPassCards = () => {
+    onPassCards(selectedCards);
+    setSelectedCards([]);
+  }
   
   const playButton = useMemo(() => {
     return (
@@ -137,13 +151,14 @@ export const PlayerHand: FC<PlayerHandProps> = ({
         disabled={!canPassToPlayer}
         onClick={handleClickPassCards}
       >
-        pass cards
+        pass card(s)
       </button>
     )
-  }, []);
+  }, [canPassToPlayer]);
   
   const handleSelectCard = (card: Card) => {
-    const canSelect = isActive || (!readyToPlay && !isPassingHighCards);
+    const canSelect = (isActive && readyToPlay)
+      || (!readyToPlay && !isPassingHighCards);
     if (canSelect) {
       const newSelectedCards = [...selectedCards, card];
       setSelectedCards(newSelectedCards);
@@ -151,7 +166,8 @@ export const PlayerHand: FC<PlayerHandProps> = ({
   }
 
   const handleDeselectCard = (targetCard: Card) => {
-    const canDeselect = isActive || (!readyToPlay && !isPassingHighCards);
+    const canDeselect = (isActive && readyToPlay)
+      || (!readyToPlay && !isPassingHighCards);
     if (canDeselect) {
       let newSelectedCards: Card[] = [];
       for (let i = 0; i < selectedCards.length; i++) {
@@ -165,19 +181,6 @@ export const PlayerHand: FC<PlayerHandProps> = ({
     }
   }
 
-  const handleClickPlay = () => {
-    onPlayTurn(selectedCards);
-    setSelectedCards([]);
-  }
-  
-  const handleClickPass = () => {
-    onPlayTurn();
-  }
-  
-  const handleClickPassCards = () => {
-    onPassCards(selectedCards);
-  }
-
   const renderCards = (cards: Card[]) => {
     return cards.map((card, index) => (
       <PlayerCard
@@ -189,8 +192,6 @@ export const PlayerHand: FC<PlayerHandProps> = ({
       />
     ));
   }
-
-
 
   if (!hand?.cards) {
     return <p>There should be cards here...</p>

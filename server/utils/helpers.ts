@@ -66,7 +66,9 @@ export function passCards(
     }
   }
 
-  if (!givingHandIndex || !receivingHandIndex) {
+  if (
+    typeof givingHandIndex !== "number"
+    || typeof receivingHandIndex !== "number" ) {
     throw new Error("unable to determine giver and receiver hands to pass cards");
   }
 
@@ -81,6 +83,7 @@ export function passCards(
       if (cardInHand.alias === cardAlias) {
         round.hands[givingHandIndex].cards.splice(i, 1);
         round.hands[receivingHandIndex].cards.push(cardInHand);
+        cardsPassed++;
         break;
       }
     }

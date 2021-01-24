@@ -72,7 +72,7 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     if (!!cardsToPlay && cardsToPlay.length > 0) {
       // Make the current play
       currentRound = playFromHandToPile(currentRound, cardsToPlay, targetHandIndex, playerId);
-      scumDb.logAction(gameId, `${playerName} throws down: ${cardsToPlay.join(", ")}`);
+      await scumDb.logAction(gameId, `${playerName} throws down: ${cardsToPlay.join(", ")}`);
       // Check to see if that play cleared the pile
       const clearPileReason = lastPlayShouldClearPile(currentRound.activePile, game.gameConfig);
       // If so, do it and log a message
@@ -86,16 +86,16 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
           }
         }
         // Log the action
-        scumDb.logAction(gameId, `${playerName} takes the pile with ${clearPileReason}!`);
+        await scumDb.logAction(gameId, `${playerName} takes the pile with ${clearPileReason}!`);
       }
       if (currentRound.hands[targetHandIndex].cards.length === 0) {
         currentRound.hands[targetHandIndex].endRank = getNextRank(currentRound.hands);
-        scumDb.logAction(gameId, `${playerName} is out of cards!`);
+        await scumDb.logAction(gameId, `${playerName} is out of cards!`);
       }
     // No cards to play, it's a pass
     } else {
       currentRound.hands[targetHandIndex].hasPassed = true;
-      scumDb.logAction(gameId, `${playerName} passes :(`);
+      await scumDb.logAction(gameId, `${playerName} passes :(`);
     }
     // The play has been made, undo the active player's active status
     currentRound.hands[targetHandIndex].isActive = false;
@@ -109,6 +109,7 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
       }
       // Set the round's end date
       currentRound.endedAt = new Date().toISOString();
+      await scumDb.logAction(gameId, "the round is over!");
     // Else, the round should continue...
     } else {
       let nextHandIndex = getNextHandIndex(currentRound.hands, targetHandIndex);

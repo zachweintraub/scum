@@ -66,69 +66,6 @@ export const Game: FC = () => {
     variables: { id: gameId },
   });
 
-  // Trigger mutation to start the game
-  const handleStartGame = async () => {
-    await startGame({
-      variables: {
-        gameId: data?.game.id!,
-      },
-    });
-  }
-
-  // Trigger mutation to start a new round
-  const handleStartNewRound = async () => {
-    await startRound({
-      variables: {
-        gameId: data!.game.id,
-      }
-    });
-  }
-
-  // Handler for the action of playing a turn, passed down as a prop
-  const handlePlayTurn = async (cards?: Card[]) => {
-    const variables: PlayTurnArgs = {
-      playerId: playerContext.player!.id,
-      gameId: data!.game.id,
-      cardsToPlay: cards?.map(c => c.alias),
-    };
-    await playTurn({ variables });
-  };
-
-  // Handler for the action of passing cards from one player to another
-  const handlePassCards = async (cards: Card[]) => {
-    // Just return if conditions aren't right
-    if (
-      !playerContext.player
-      || !data?.game
-      || !activeRound
-      || !playerHand?.startRank
-      || playerHand.readyToPlay
-    ) {
-      return;
-    }
-
-    // Determine the rank to whom this player owes cards
-    const complimentaryRank = activeRound.hands.length - playerHand.startRank;
-    // Then grab the ID of the player with that rank
-    const receivingPlayerId = activeRound.hands.find(h => h.startRank === complimentaryRank)?.playerId;
-
-    // If we couldn't find such a player, something's wrong
-    if (!receivingPlayerId) {
-      console.warn("UNABLE TO DETERMINE A COMPLIMENTARY PLAYER FOR PASSING CARDS");
-      return;
-    }
-
-    // Pass the cards
-    await passCards({
-      variables: {
-        gameId: data.game.id,
-        cardsToPass: cards.map(c => c.alias),
-        givingPlayerId: playerContext.player!.id,
-        receivingPlayerId,
-      }
-    })
-  }
-
   // Flag to determine whether the game has started
   const gameHasStarted = !!data?.game.startedAt;
 
@@ -171,6 +108,123 @@ export const Game: FC = () => {
     }
     return activeRound.activePile[activeRound.activePile.length - 1];
   };
+
+  // Gets the player with this player's complimentary rank for card passing
+  const getComplimentaryPlayerId = () => {
+    if (!activeRound || typeof playerHand?.startRank !== "number") {
+      return;
+    }
+    // Determine the rank to whom this player owes cards
+    const complimentaryRank = activeRound.hands.length - playerHand.startRank - 1;
+
+    // Then grab the ID of the player with that rank
+    const complimentaryPlayerId = activeRound.hands.find(h => h.startRank === complimentaryRank)?.playerId;
+
+    // If we couldn't find such a player, something's wrong
+    if (!complimentaryPlayerId) {
+      console.warn("UNABLE TO DETERMINE A COMPLIMENTARY PLAYER FOR PASSING CARDS");
+      return;
+    }
+
+    return complimentaryPlayerId;
+  }
+
+  // Gets the number of cards this player needs to pass
+  const getCardsNeededToPassQty = () => {
+    if (
+      playerHand?.readyToPlay
+      || !activeRound
+      || !playerHand
+      || typeof playerHand.startRank !== "number"
+    ) {
+      return undefined;
+    }
+    if (activeRound.hands.length === 3) {
+      return 1;
+    }
+    return playerHand.startRank === 0 || playerHand.startRank === activeRound.hands.length - 1
+      ? 2
+      : 1;
+  }
+
+  // Trigger mutation to start the game
+  const handleStartGame = async () => {
+    await startGame({
+      variables: {
+        gameId: data?.game.id!,
+      },
+    });
+  }
+
+  // Trigger mutation to start a new round
+  const handleStartNewRound = async () => {
+    await startRound({
+      variables: {
+        gameId: data!.game.id,
+      }
+    });
+  }
+
+  // Handler for the action of playing a turn, passed down as a prop
+  const handlePlayTurn = async (cards?: Card[]) => {
+    const variables: PlayTurnArgs = {
+      playerId: playerContext.player!.id,
+      gameId: data!.game.id,
+      cardsToPlay: cards?.map(c => c.alias),
+    };
+    await playTurn({ variables });
+  };
+
+  // Handler for the action of passing cards from one player to another
+  const handlePassCards = async (cards: Card[]) => {
+    // Just return if conditions aren't right
+    if (
+      !playerContext.player
+      || !data?.game
+      || !activeRound
+      || !playerHand
+      || typeof playerHand.startRank !== "number"
+      || playerHand.readyToPlay
+    ) {
+      return;
+    }
+
+    // Then grab the ID of the player to receive these cards
+    const receivingPlayerId = getComplimentaryPlayerId();
+
+    // If we couldn't find such a player, something's wrong
+    if (!receivingPlayerId) {
+      console.warn("UNABLE TO DETERMINE A COMPLIMENTARY PLAYER FOR PASSING CARDS");
+      return;
+    }
+
+    // Pass the cards
+    await passCards({
+      variables: {
+        gameId: data.game.id,
+        cardsToPass: cards.map(c => c.alias),
+        givingPlayerId: playerContext.player!.id,
+        receivingPlayerId,
+      }
+    })
+  }
+
+  // Gets a message to display under the player's hand if they need to trade cards
+  const renderPassCardsMessage = () => {
+    if (!playerHand) {
+      return;
+    }
+    const complimentaryPlayerId = getComplimentaryPlayerId();
+    const complimentaryPlayer = data?.game.players.find(p => p.id === complimentaryPlayerId);
+    const qty = getCardsNeededToPassQty();
+    if (!complimentaryPlayer || !qty) {
+      return;
+    }
+    const message = `you owe your ${qty} ${isPassingHighCards ? "highest" : "least desired"} card${qty > 1 ? "s" : ""} to ${complimentaryPlayer.name}`;
+    return (
+      <p>{message}</p>
+    )
+  }
 
   // This renders the pre-game view (start game button or waiting message)
   const renderInactiveGame = () => {
@@ -267,7 +321,9 @@ export const Game: FC = () => {
             onPassCards={handlePassCards}
             powerCard={data.game.gameConfig.powerCardAlias}
             isPassingHighCards={isPassingHighCards}
+            cardsNeededToPass={getCardsNeededToPassQty()}
           />
+          {!playerHand?.readyToPlay && renderPassCardsMessage()}
         </>
         : <>
           {renderInactiveGame()}
