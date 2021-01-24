@@ -137,8 +137,9 @@ export class ScumDb {
   /**
    * Get all rounds for a game
    */
-  public async getRounds(gameId: ObjectID): Promise<ScumDb.RoundDBO[]> {
-    const rounds = await this.db.collection("rounds").find({ gameId: gameId }).toArray();
+  public async getRounds(gameId: string): Promise<ScumDb.RoundDBO[]> {
+    const thisGameId = new ObjectID(gameId);
+    const rounds = await this.db.collection("rounds").find({ gameId: thisGameId }).toArray();
     return rounds;
   }
 

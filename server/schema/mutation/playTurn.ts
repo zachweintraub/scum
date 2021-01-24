@@ -32,7 +32,7 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     if (!game) {
       throw new GraphQLError(`OH NO! No game found with ID ${gameId}`);
     }
-    const rounds = await scumDb.getRounds(game._id);
+    const rounds = await scumDb.getRounds(gameId);
     if (!rounds) {
       throw new GraphQLError(`OH NO! No rounds found for game ${gameId}`);
     }

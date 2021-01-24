@@ -42,6 +42,62 @@ export function playFromHandToPile(round: ScumDb.RoundDBO, cardsToPlay: string[]
 }
 
 /**
+ * Pass cards from one player's hand to another
+ * Also sets the giving player's hand as "ready to play"
+ */
+export function passCards(
+  round: ScumDb.RoundDBO,
+  givingPlayerId: string,
+  receivingPlayerId: string,
+  cards: string[],
+): ScumDb.RoundDBO {
+
+  const { hands } = round;
+
+  let givingHandIndex: number | null = null;
+  let receivingHandIndex: number | null = null;
+
+  for (let i = 0; i < hands.length; i++) {
+    if (hands[i].playerId === givingPlayerId) {
+      givingHandIndex = i;
+    }
+    if (hands[i].playerId === receivingPlayerId) {
+      receivingHandIndex = i;
+    }
+  }
+
+  if (!givingHandIndex || !receivingHandIndex) {
+    throw new Error("unable to determine giver and receiver hands to pass cards");
+  }
+
+  // Create an array to hold the full card objects
+  let cardsPassed: number = 0;
+
+  // Loop through the cards to pass
+  for (const cardAlias of cards) {
+    // For each card to pass, find it in the hand, remove it, and add it to this play
+    for (let i = 0; i < round.hands[givingHandIndex].cards.length; i++) {
+      const cardInHand = round.hands[givingHandIndex].cards[i];
+      if (cardInHand.alias === cardAlias) {
+        round.hands[givingHandIndex].cards.splice(i, 1);
+        round.hands[receivingHandIndex].cards.push(cardInHand);
+        break;
+      }
+    }
+  }
+
+  // If we didn't pass the intended number of cards, something went wrong
+  if (cardsPassed !== cards.length) {
+    throw new Error("unable to extract the designated cards from player's hand");
+  }
+
+  // Set the giving player's readyToPlay status now that they have passed cards
+  round.hands[givingHandIndex].readyToPlay = true;
+
+  return round;
+}
+
+/**
  * Moves the cards in the active pile to the discard pile for a given round
  */
 export function clearPile(round: ScumDb.RoundDBO) {
