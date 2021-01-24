@@ -2,14 +2,14 @@ import { GraphQLBoolean, GraphQLError, GraphQLFieldConfig, GraphQLList, GraphQLN
 import { GraphQlContext } from "../..";
 import { passCards } from "../../utils/helpers";
 
-type Args = {
+export type PassCardsArgs = {
   gameId: string;
   givingPlayerId: string;
   receivingPlayerId: string;
-  cards: string[];
+  cardsToPass: string[];
 };
 
-export const passCardsToPlayer: GraphQLFieldConfig<null, GraphQlContext, Args> = {
+export const passCardsToPlayer: GraphQLFieldConfig<null, GraphQlContext, PassCardsArgs> = {
   type: new GraphQLNonNull(GraphQLBoolean),
   description: "Pass cards from one player to another",
   args: {
@@ -25,7 +25,7 @@ export const passCardsToPlayer: GraphQLFieldConfig<null, GraphQlContext, Args> =
       type: new GraphQLNonNull(GraphQLString),
       description: "The ID of the player receiving the cards",
     },
-    cards: {
+    cardsToPass: {
       type: new GraphQLNonNull(new GraphQLList(GraphQLString)),
       description: "The cards being passed",
     },
@@ -34,7 +34,7 @@ export const passCardsToPlayer: GraphQLFieldConfig<null, GraphQlContext, Args> =
     gameId,
     givingPlayerId,
     receivingPlayerId,
-    cards,
+    cardsToPass,
   }, { scumDb, publishUpdate }) {
     try {
 
@@ -56,7 +56,7 @@ export const passCardsToPlayer: GraphQLFieldConfig<null, GraphQlContext, Args> =
         currentRound,
         givingPlayerId,
         receivingPlayerId,
-        cards,
+        cardsToPass,
       );
 
       // Update the round in the DB

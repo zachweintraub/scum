@@ -11,6 +11,9 @@ import { PlayTurnArgs, PLAY_TURN } from "../mutations/playTurn";
 import { OtherPlayerHand, OtherPlayers } from "../components/OtherPlayers";
 import { StartGameArgs, StartGameResponse, START_GAME } from "../mutations/startGame";
 import { ActionLog } from "../components/ActionLog";
+import { StartRoundArgs, StartRoundResponse, START_ROUND } from "../mutations/startRound";
+import { PassCardsResponse, PASS_CARDS } from "../mutations/passCards";
+import { PassCardsArgs } from "../../server/schema/mutation/passCards";
 
 /**
  * TODO: Idea for pausing on cards played before clearing the active pile...
@@ -32,18 +35,23 @@ export const Game: FC = () => {
   //const apolloClientContext = useContext(ApolloClientContext);
 
   // Query for the whole game
-  const { subscribeToMore, data, loading: gameDataLoading } = useQuery<GetGameResponse, { id: string }>(GET_GAME, {
+  const { subscribeToMore, data, loading: gameDataLoading, error: gameDataError } = useQuery<GetGameResponse, { id: string }>(GET_GAME, {
     variables: {
       id: gameId!,
     },
   });
-
   
   // Set up the mutation to start the game
   const [startGame, { loading: startGameLoading, error: startGameError }] = useMutation<StartGameResponse, StartGameArgs>(START_GAME);
+
+  // Set up the mutatiomn to start a new round
+  const [startRound, { loading: startRoundLoading, error: startRoundError }] = useMutation<StartRoundResponse, StartRoundArgs>(START_ROUND);
   
   // Set up the mutation that allows a player to play their turn
   const [playTurn, { loading: playTurnLoading, error: playTurnError }] = useMutation<boolean, PlayTurnArgs>(PLAY_TURN);
+
+  // Set up the mutation that allows one player to pass cards to another
+  const [passCards, { loading: passCardsLoading, error: passCardsError }] = useMutation<PassCardsResponse, PassCardsArgs>(PASS_CARDS);
 
   // Prompt player info if none exists
   if (!playerContext?.player) {
@@ -69,7 +77,11 @@ export const Game: FC = () => {
 
   // Trigger mutation to start a new round
   const handleStartNewRound = async () => {
-    return;
+    await startRound({
+      variables: {
+        gameId: data!.game.id,
+      }
+    });
   }
 
   // Handler for the action of playing a turn, passed down as a prop
@@ -82,6 +94,41 @@ export const Game: FC = () => {
     await playTurn({ variables });
   };
 
+  // Handler for the action of passing cards from one player to another
+  const handlePassCards = async (cards: Card[]) => {
+    // Just return if conditions aren't right
+    if (
+      !playerContext.player
+      || !data?.game
+      || !activeRound
+      || !playerHand?.startRank
+      || playerHand.readyToPlay
+    ) {
+      return;
+    }
+
+    // Determine the rank to whom this player owes cards
+    const complimentaryRank = activeRound.hands.length - playerHand.startRank;
+    // Then grab the ID of the player with that rank
+    const receivingPlayerId = activeRound.hands.find(h => h.startRank === complimentaryRank)?.playerId;
+
+    // If we couldn't find such a player, something's wrong
+    if (!receivingPlayerId) {
+      console.warn("UNABLE TO DETERMINE A COMPLIMENTARY PLAYER FOR PASSING CARDS");
+      return;
+    }
+
+    // Pass the cards
+    await passCards({
+      variables: {
+        gameId: data.game.id,
+        cardsToPass: cards.map(c => c.alias),
+        givingPlayerId: playerContext.player!.id,
+        receivingPlayerId,
+      }
+    })
+  }
+
   // Flag to determine whether the game has started
   const gameHasStarted = !!data?.game.startedAt;
 
@@ -90,6 +137,13 @@ export const Game: FC = () => {
 
   // This is the hand of the logged in player
   const playerHand = activeRound?.hands.find(h => h.playerId === playerContext?.player?.id);
+
+  // True if the player owes high cards
+  const isPassingHighCards = !playerHand?.readyToPlay
+    && activeRound
+    && !!playerHand?.startRank
+    // This part means they are ranked below the mid-point (higher number = worse rank)
+    && playerHand.startRank >= Math.max(activeRound.hands.length / 2);
 
   // These objects represent the hands of the other players
   // Needs a refactor to loop over hands rather than players to ensure the order looks right
@@ -162,58 +216,63 @@ export const Game: FC = () => {
   }
 
   // Return a loading message while the game is being fetched
-  if (gameDataLoading || playTurnLoading || startGameLoading) {
+  if (
+    gameDataLoading 
+    || startGameLoading
+    || playTurnLoading
+    || startRoundLoading
+    || passCardsLoading
+  ) {
     return <p>Loading...</p>;
   }
 
   // Return a message if the turn was unable to be played
-  if (playTurnError || startGameError) {
+  if (
+    gameDataError
+    || playTurnError
+    || startGameError
+    || startRoundError
+    || passCardsError
+  ) {
     return <p>An error occurred...</p>;
   }
 
   // If the game data exists...
-  if (data && data.game) {
-    return (
-      <>
-        <h3
-          className="gameName"
-        >
-          {data.game.name}
-        </h3>
-        <p>PLAYERS:</p>
-        <OtherPlayers
-          playerHands={otherPlayers()}
-        />
-        <ActionLog actions={data.game.actionLog} />
-        {
-          activeRound
-          ? <>
-            {renderActivePile()}
-            <PlayerHand
-              name={playerContext.player.name}
-              cards={getSortedCards(playerHand?.cards)}
-              turnInProgress={!!playerHand?.isActive}
-              playToBeat={getPreviousTurn()?.cards}
-              onPlayTurn={handlePlayTurn}
-              powerCard={data.game.gameConfig.powerCardAlias}
-            />
-          </>
-          : <>
-            {renderInactiveGame()}
-          </>
-        }
-      </>
-    );
+  if (!data || !data.game) {
+    // If none of the above and still no data, something is definitely wrong
+    return <p>something has gone terribly wrong...</p>;
   }
 
-  // If none of the above, something is definitely wrong
-  return <p>something has gone terribly wrong...</p>;
-
+  return (
+    <>
+      <h3
+        className="gameName"
+      >
+        {data.game.name}
+      </h3>
+      <p>PLAYERS:</p>
+      <OtherPlayers
+        playerHands={otherPlayers()}
+      />
+      <ActionLog actions={data.game.actionLog} />
+      {
+        activeRound
+        ? <>
+          {renderActivePile()}
+          <PlayerHand
+            player={playerContext.player}
+            hand={playerHand!}
+            playToBeat={getPreviousTurn()?.cards}
+            onPlayTurn={handlePlayTurn}
+            onPassCards={handlePassCards}
+            powerCard={data.game.gameConfig.powerCardAlias}
+            isPassingHighCards={isPassingHighCards}
+          />
+        </>
+        : <>
+          {renderInactiveGame()}
+        </>
+      }
+    </>
+  );
 };
-
-// Function to sort the player's cards from low to high
-function getSortedCards(cards?: Card[]) {
-  return cards?.slice().sort((a, b) => {
-    return a.rank - b.rank;
-  });
-}
