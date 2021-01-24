@@ -15,7 +15,7 @@ export const GqlHand = new GraphQLObjectType<ScumDb.HandDBO, GraphQlContext>({
     readyToPlay: {
       type: new GraphQLNonNull(GraphQLBoolean),
       description: "Will be false if the player needs to trade cards",
-      resolve: ({ readyToPlay }) => readyToPlay,
+      resolve: ({ readyToPlay }) => !!readyToPlay,
     },
     cards: {
       type: new GraphQLNonNull(new GraphQLList(GqlCard)),

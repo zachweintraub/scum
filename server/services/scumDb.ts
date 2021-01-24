@@ -60,9 +60,10 @@ export class ScumDb {
    * Add a new round to an existing game 
    */
   public async createRound(round: Omit<ScumDb.RoundDBO, "_id">): Promise<boolean> {
-    // Add an ID before inserting
+    // Add an ID and start time before inserting
     const newRound: ScumDb.RoundDBO = {
       _id: new ObjectID(),
+      startedAt: new Date().toISOString(),
       ...round,
     };
     // Insert
