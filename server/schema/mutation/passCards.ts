@@ -71,7 +71,7 @@ export const passCardsToPlayer: GraphQLFieldConfig<null, GraphQlContext, PassCar
       // Update the round in the DB
       const cardsPassedSuccessful = await scumDb.updateRound(currentRound);
       // Broadcast the fact that the game has changed
-      await scumDb.logAction(gameId, `${givingPlayer.name} passed ${cardsToPass.length} cards to ${receivingPlayer.name}`);
+      await scumDb.logAction(gameId, `${givingPlayer.name} passed ${cardsToPass.length} card${cardsToPass.length > 1 ? "s" : ""} to ${receivingPlayer.name}`);
       await publishUpdate(gameId);
 
       // Return the result (true)

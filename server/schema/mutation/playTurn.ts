@@ -100,7 +100,8 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     // The play has been made, undo the active player's active status
     currentRound.hands[targetHandIndex].isActive = false;
     // If the round should end, do it
-    if (roundShouldEnd(currentRound)) {
+    const thisRoundShouldEnd = roundShouldEnd(currentRound);
+    if (thisRoundShouldEnd) {
       // Make sure all players have a rank
       for (let i = 0; i < currentRound.hands.length; i++) {
         if (typeof currentRound.hands[i].endRank !== "number") {
@@ -141,8 +142,10 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     // Update the round
     try {
       const success = await scumDb.updateRound(currentRound);
+      if (!thisRoundShouldEnd) {
+        await scumDb.logAction(gameId, `it's ${playerName}'s turn!`);
+      }
       publishUpdate(gameId);
-      await scumDb.logAction(gameId, `it's ${playerName}'s turn!`);
       return success;
     } catch (err) {
       throw new GraphQLError(`An error occurred while updating the round for game ${gameId}: ${err}`);

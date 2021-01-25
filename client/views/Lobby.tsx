@@ -73,7 +73,7 @@ export const Lobby: FC = () => {
               <p>Name: {game.name}</p>
               <p>Host: {game.host.name}</p>
               <p>Current Players: {game.players.map(p => p.name).join(", ")}</p>
-              <JoinGamexButton
+              <JoinGameButton
                 gameId={game.id}
                 playerId={playerContext.player?.id!}
                 text="Rejoin"
