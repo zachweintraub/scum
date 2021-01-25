@@ -8,7 +8,7 @@ import { Portal } from "./Portal";
 import { PlayerHand } from "../components/PlayerHand";
 import { PlayingCard } from "../components/PlayingCard";
 import { PlayTurnArgs, PLAY_TURN } from "../mutations/playTurn";
-import { OtherPlayerHand, OtherPlayers } from "../components/OtherPlayers";
+import { OtherPlayers } from "../components/OtherPlayers";
 import { StartGameArgs, StartGameResponse, START_GAME } from "../mutations/startGame";
 import { ActionLog } from "../components/ActionLog";
 import { StartRoundArgs, StartRoundResponse, START_ROUND } from "../mutations/startRound";
@@ -81,25 +81,6 @@ export const Game: FC = () => {
     && !!playerHand?.startRank
     // This part means they are ranked below the mid-point (higher number = worse rank)
     && playerHand.startRank >= Math.max(activeRound.hands.length / 2);
-
-  // // These objects represent the hands of the other players
-  // // Needs a refactor to loop over hands rather than players to ensure the order looks right
-  // const otherPlayers = (): OtherPlayerHand[] => {
-  //   let playerHands: OtherPlayerHand[] = [];
-  //   if (data?.game.players) {
-  //     for (const player of data.game.players) {
-  //         const playerHand = activeRound?.hands.find(hand => hand.playerId === player.id);
-  //         const playerName = player.name;
-  //         playerHands.push({
-  //           playerName,
-  //           cardsRemaining: playerHand?.cards.length,
-  //           isActive: playerHand?.isActive,
-  //           hasPassed: playerHand?.hasPassed,
-  //         });
-  //     }
-  //   }
-  //   return playerHands;
-  // };
 
   // This is the last turn played to the active pile
   const getPreviousTurn = () => {
@@ -279,7 +260,6 @@ export const Game: FC = () => {
     if (data?.game && previousRound) {
       return (
         <div>
-          <p>PLAYERS:</p>
           <OtherPlayers
             hands={previousRound.hands}
             players={data?.game.players}
@@ -335,7 +315,6 @@ export const Game: FC = () => {
     }
     return (
       <div>
-        <p>PLAYERS:</p>
         <OtherPlayers
           hands={activeRound.hands}
           players={data.game.players}
@@ -357,7 +336,7 @@ export const Game: FC = () => {
     );
   }
 
-  // Return a loading message while the game is being fetched
+  // Return a loading message while a query/mutation is in progress
   if (
     gameDataLoading 
     || startGameLoading
