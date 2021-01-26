@@ -1,16 +1,19 @@
-import React, { FC, useContext, useMemo } from "react";
+import React, { FC, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { PlayerContext } from "../contexts/Player";
 import { useMutation, useQuery } from "@apollo/client";
-import { Card, GetGameResponse, GET_GAME } from "../queries/getGame";
+import { Card, GetGameResponse, GET_GAME, Round } from "../queries/getGame";
 import { SUBSCRIBE_TO_GAME } from "../subscriptions/game";
 import { Portal } from "./Portal";
 import { PlayerHand } from "../components/PlayerHand";
 import { PlayingCard } from "../components/PlayingCard";
 import { PlayTurnArgs, PLAY_TURN } from "../mutations/playTurn";
-import { OtherPlayerHand, OtherPlayers } from "../components/OtherPlayers";
+import { OtherPlayers } from "../components/OtherPlayers";
 import { StartGameArgs, StartGameResponse, START_GAME } from "../mutations/startGame";
-//import { ApolloClientContext } from "../contexts/ApolloClient";
+import { ActionLog } from "../components/ActionLog";
+import { StartRoundArgs, StartRoundResponse, START_ROUND } from "../mutations/startRound";
+import { PassCardsResponse, PASS_CARDS } from "../mutations/passCards";
+import { PassCardsArgs } from "../../server/schema/mutation/passCards";
 
 /**
  * TODO: Idea for pausing on cards played before clearing the active pile...
@@ -31,43 +34,115 @@ export const Game: FC = () => {
   const playerContext = useContext(PlayerContext);
   //const apolloClientContext = useContext(ApolloClientContext);
 
+  // Query for the whole game
+  const { subscribeToMore, data, loading: gameDataLoading, error: gameDataError } = useQuery<GetGameResponse, { id: string }>(GET_GAME, {
+    variables: {
+      id: gameId!,
+    },
+  });
+  
+  // Set up the mutation to start the game
+  const [startGame, { loading: startGameLoading, error: startGameError }] = useMutation<StartGameResponse, StartGameArgs>(START_GAME);
+
+  // Set up the mutatiomn to start a new round
+  const [startRound, { loading: startRoundLoading, error: startRoundError }] = useMutation<StartRoundResponse, StartRoundArgs>(START_ROUND);
+  
+  // Set up the mutation that allows a player to play their turn
+  const [playTurn, { loading: playTurnLoading, error: playTurnError }] = useMutation<boolean, PlayTurnArgs>(PLAY_TURN);
+
+  // Set up the mutation that allows one player to pass cards to another
+  const [passCards, { loading: passCardsLoading, error: passCardsError }] = useMutation<PassCardsResponse, PassCardsArgs>(PASS_CARDS);
+
   // Prompt player info if none exists
   if (!playerContext?.player) {
     return (
       <Portal />
     );
   }
-
-  // Set up the WS connection using the apollo client context
-  // if (apolloClientContext && !apolloClientContext.wsLinkInitiated && gameId) {
-  //   apolloClientContext.initiateWsLink(playerContext.player.id, gameId);
-  // }
-
-
-  // Query for the whole game
-  const { subscribeToMore, data, loading: gameDataLoading } = useQuery<GetGameResponse, { id: string }>(GET_GAME, {
-    variables: {
-      id: gameId!,
-    },
-  });
-
+  
   // Initiate subscription to the game
   subscribeToMore({
     document: SUBSCRIBE_TO_GAME,
     variables: { id: gameId },
   });
 
-  // Set up the mutation to start the game
-  const [startGame, { loading: startGameLoading, error: startGameError }] = useMutation<StartGameResponse, StartGameArgs>(START_GAME);
+  // Flag to determine whether the game has started
+  const gameHasStarted = !!data?.game.startedAt;
 
-  // Set up the mutation that allows a player to play their turn
-  const [playTurn, { loading: playTurnLoading, error: playTurnError }] = useMutation<boolean, PlayTurnArgs>(PLAY_TURN);
+  // This is the current active round pulled from the game
+  const activeRound = data?.game.rounds?.find(r => r.isActive);
 
+  // This is the hand of the logged in player
+  const playerHand = activeRound?.hands.find(h => h.playerId === playerContext?.player?.id);
+
+  // True if the player owes high cards
+  const isPassingHighCards = !playerHand?.readyToPlay
+    && activeRound
+    && !!playerHand?.startRank
+    // This part means they are ranked below the mid-point (higher number = worse rank)
+    && playerHand.startRank >= Math.max(activeRound.hands.length / 2);
+
+  // This is the last turn played to the active pile
+  const getPreviousTurn = () => {
+    if (!activeRound || !activeRound.activePile || activeRound.activePile.length < 1) {
+      return undefined;
+    }
+    return activeRound.activePile[activeRound.activePile.length - 1];
+  };
+
+  // Gets the player with this player's complimentary rank for card passing
+  const getComplimentaryPlayerId = () => {
+    if (!activeRound || typeof playerHand?.startRank !== "number") {
+      return;
+    }
+    // Determine the rank to whom this player owes cards
+    const complimentaryRank = activeRound.hands.length - playerHand.startRank - 1;
+
+    // Then grab the ID of the player with that rank
+    const complimentaryPlayerId = activeRound.hands.find(h => h.startRank === complimentaryRank)?.playerId;
+
+    // If we couldn't find such a player, something's wrong
+    if (!complimentaryPlayerId) {
+      console.warn("UNABLE TO DETERMINE A COMPLIMENTARY PLAYER FOR PASSING CARDS");
+      return;
+    }
+
+    return complimentaryPlayerId;
+  }
+
+  // Gets the number of cards this player needs to pass
+  const getCardsNeededToPassQty = () => {
+    if (
+      playerHand?.readyToPlay
+      || !activeRound
+      || !playerHand
+      || typeof playerHand.startRank !== "number"
+    ) {
+      return undefined;
+    }
+    if (activeRound.hands.length === 3) {
+      return 1;
+    }
+    return playerHand.startRank === 0 || playerHand.startRank === activeRound.hands.length - 1
+      ? 2
+      : 1;
+  }
+
+  // Trigger mutation to start the game
   const handleStartGame = async () => {
     await startGame({
       variables: {
         gameId: data?.game.id!,
       },
+    });
+  }
+
+  // Trigger mutation to start a new round
+  const handleStartNewRound = async () => {
+    await startRound({
+      variables: {
+        gameId: data!.game.id,
+      }
     });
   }
 
@@ -81,54 +156,133 @@ export const Game: FC = () => {
     await playTurn({ variables });
   };
 
-  // This is the current active round pulled from the game
-  const activeRound = data?.game.rounds?.find(r => r.isActive);
+  // Handler for the action of passing cards from one player to another
+  const handlePassCards = async (cards: Card[]) => {
+    // Just return if conditions aren't right
+    if (
+      !playerContext.player
+      || !data?.game
+      || !activeRound
+      || !playerHand
+      || typeof playerHand.startRank !== "number"
+      || playerHand.readyToPlay
+    ) {
+      return;
+    }
 
-  // This is the hand of the logged in player
-  const playerHand = activeRound?.hands.find(h => h.playerId === playerContext?.player?.id);
+    // Then grab the ID of the player to receive these cards
+    const receivingPlayerId = getComplimentaryPlayerId();
 
-  // These objects represent the hands of the other players
-  const otherPlayers: OtherPlayerHand[] = useMemo(() => {
-    let playerHands: OtherPlayerHand[] = [];
-    if (data?.game.players) {
-      for (const player of data.game.players) {
-          const playerHand = activeRound?.hands.find(hand => hand.playerId === player.id);
-          const playerName = player.name;
-          playerHands.push({
-            playerName,
-            cardsRemaining: playerHand?.cards.length,
-            isActive: playerHand?.isActive,
-            hasPassed: playerHand?.hasPassed,
-          });
+    // If we couldn't find such a player, something's wrong
+    if (!receivingPlayerId) {
+      console.warn("UNABLE TO DETERMINE A COMPLIMENTARY PLAYER FOR PASSING CARDS");
+      return;
+    }
+
+    // Pass the cards
+    await passCards({
+      variables: {
+        gameId: data.game.id,
+        cardsToPass: cards.map(c => c.alias),
+        givingPlayerId: playerContext.player!.id,
+        receivingPlayerId,
       }
-    }
-    return playerHands;
-  }, [data?.game]);
+    })
+  }
 
-  // This is the last turn played to the active pile
-  const previousTurn = useMemo(() => {
-    if (!activeRound || !activeRound.activePile || activeRound.activePile.length < 1) {
-      return undefined;
+  // Gets a message to display under the player's hand if they need to trade cards
+  const renderPassCardsMessage = () => {
+    if (!playerHand) {
+      return;
     }
-    return activeRound.activePile[activeRound.activePile.length - 1];
-  }, [data?.game]);
+    const complimentaryPlayerId = getComplimentaryPlayerId();
+    const complimentaryPlayer = data?.game.players.find(p => p.id === complimentaryPlayerId);
+    const qty = getCardsNeededToPassQty();
+    if (!complimentaryPlayer || !qty) {
+      return;
+    }
+    const message = `you owe your ${qty} ${isPassingHighCards ? "highest" : "least desired"} card${qty > 1 ? "s" : ""} to ${complimentaryPlayer.name}`;
+    return (
+      <p>{message}</p>
+    )
+  }
 
-  // This renders the pre-game view (start game button or waiting message)
-  const renderPreGame = () => {
+  const renderHostActionNeeded = () => {
+    const continueAction = gameHasStarted
+      ? "start new round"
+      : "start game";
+    const handleContinueAction = gameHasStarted
+      ? handleStartNewRound
+      : handleStartGame;
     if (data?.game.host.id === playerContext.player?.id) {
       return (
         <button
-          onClick={handleStartGame}
+          onClick={handleContinueAction}
         >
-          start game
+          {continueAction}
         </button>);
+
     }
-    return (<p>waiting for host to start game...</p>)
+    return (<p>waiting for host to {continueAction}...</p>);
+  }
+
+  const renderPlayersWaitingForGame = () => {
+    if (!data?.game.players) {
+      return;
+    }
+    return (
+      <p>players present: {data.game.players.map(p => p.name).join(", ")}</p>
+    );
+  }
+
+  // This renders the pre-game view (start game button or waiting message)
+  const renderInactiveGame = () => {
+
+    // Establish a variable to hold the previous round
+    let previousRound: Round | null = null;
+
+    // Loop over the rounds and find that which finished most recently
+    if (data?.game.rounds?.length) {
+      // Loop over other rounds to ensure they've all ended and find the most recent
+      for (const round of data.game.rounds) {
+        // Throw an error if another is still in progress
+        if (!round.endedAt) {
+          continue;
+        }
+        // If no previous round has been set or the one that has ended before this one, this is the new previous round
+        if (!previousRound || (previousRound.endedAt && round.endedAt > previousRound.endedAt)) {
+          previousRound = round;
+        }
+      }
+    }
+
+    // If a previous round was identified, return this...
+    if (data?.game && previousRound) {
+      return (
+        <div>
+          <OtherPlayers
+            hands={previousRound.hands}
+            players={data?.game.players}
+          />
+          <ActionLog actions={data.game.actionLog} />
+          {renderHostActionNeeded()}
+        </div>
+      );
+    }
+
+    // Otherwise, return this
+    return (
+      <div>
+        {renderPlayersWaitingForGame()}
+        {renderHostActionNeeded()}
+      </div>
+    );
+        
   }
 
   // This renders the active pile by displaying the previous turn or a message
   const renderActivePile = () => {
-    const turn = previousTurn;
+    const turn = getPreviousTurn();
     return (
       <div
         className="activePile"
@@ -136,85 +290,92 @@ export const Game: FC = () => {
         <p>DISCARD PILE:</p>
         {
           !!turn
-          ? turn.cards.map(card => {
+          ? turn.cards.map((card, index) => {
             return (
-              <>
-                <PlayingCard
-                  card={card}
+              <PlayingCard
+                key={`activePileCard${index}`}
+                card={card}
                 />
-              </>
             );
           })
-          : <p>Pile is empty...</p>
+          : <p>pile is empty...</p>
         }
       </div>
     );
-    // if (!turn) {
-    //   return (<p>Pile is empty...</p>);
-    // }
-    // return turn.cards.map(card => {
-    //   return (
-    //     <>
-    //       <PlayingCard
-    //         card={card}
-    //       />
-    //     </>
-    //   );
-    // });
   }
 
-  // Return a loading message while the game is being fetched
-  if (gameDataLoading || playTurnLoading || startGameLoading) {
+  const renderActiveGame = () => {
+    if (
+      !data?.game
+      || !playerContext.player
+      || !playerHand
+      || !activeRound
+      ) {
+      return;
+    }
+    return (
+      <div>
+        <OtherPlayers
+          hands={activeRound.hands}
+          players={data.game.players}
+        />
+        <ActionLog actions={data.game.actionLog} />
+        {renderActivePile()}
+        <PlayerHand
+          player={playerContext.player}
+          hand={playerHand}
+          playToBeat={getPreviousTurn()?.cards}
+          onPlayTurn={handlePlayTurn}
+          onPassCards={handlePassCards}
+          powerCard={data.game.gameConfig.powerCardAlias}
+          isPassingHighCards={isPassingHighCards}
+          cardsNeededToPass={getCardsNeededToPassQty()}
+        />
+        {!playerHand?.readyToPlay && renderPassCardsMessage()}
+      </div>
+    );
+  }
+
+  // Return a loading message while a query/mutation is in progress
+  if (
+    gameDataLoading 
+    || startGameLoading
+    || playTurnLoading
+    || startRoundLoading
+    || passCardsLoading
+  ) {
     return <p>Loading...</p>;
   }
 
   // Return a message if the turn was unable to be played
-  if (playTurnError || startGameError) {
+  if (
+    gameDataError
+    || playTurnError
+    || startGameError
+    || startRoundError
+    || passCardsError
+  ) {
     return <p>An error occurred...</p>;
   }
 
   // If the game data exists...
-  if (data && data.game) {
-    return (
-      <>
-        <h3
-          className="gameName"
-        >
-          {data.game.name}
-        </h3>
-        <p>PLAYERS:</p>
-        <OtherPlayers
-          playerHands={otherPlayers}
-        />
-        {
-          activeRound
-          ? <>
-            {renderActivePile()}
-            <PlayerHand
-              name={playerContext.player.name}
-              cards={getSortedCards(playerHand?.cards)}
-              turnInProgress={!!playerHand?.isActive}
-              playToBeat={previousTurn?.cards}
-              onPlayTurn={handlePlayTurn}
-              powerCard={data.game.gameConfig.powerCardAlias}
-            />
-          </>
-          : <>
-            {renderPreGame()}
-          </>
-        }
-      </>
-    );
+  if (!data || !data.game) {
+    // If none of the above and still no data, something is definitely wrong
+    return <p>something has gone terribly wrong...</p>;
   }
 
-  // If none of the above, something is definitely wrong
-  return <p>idk what's wrong</p>;
-
+  return (
+    <>
+      <h3
+        className="gameName"
+      >
+        {data.game.name}
+      </h3>
+      {
+        activeRound
+        ? renderActiveGame()
+        : renderInactiveGame()
+      }
+    </>
+  );
 };
-
-// Function to sort the player's cards from low to high
-function getSortedCards(cards?: Card[]) {
-  return cards?.slice().sort((a, b) => {
-    return a.rank - b.rank;
-  });
-}

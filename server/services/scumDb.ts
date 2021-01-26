@@ -59,10 +59,15 @@ export class ScumDb {
   /**
    * Add a new round to an existing game 
    */
-  public async createRound(round: ScumDb.RoundDBO): Promise<boolean> {
-    round._id = new ObjectID();
-
-    await this.db.collection("rounds").insertOne(round);
+  public async createRound(round: Omit<ScumDb.RoundDBO, "_id">): Promise<boolean> {
+    // Add an ID and start time before inserting
+    const newRound: ScumDb.RoundDBO = {
+      _id: new ObjectID(),
+      startedAt: new Date().toISOString(),
+      ...round,
+    };
+    // Insert
+    await this.db.collection("rounds").insertOne(newRound);
     return true;
   }
 
@@ -133,8 +138,9 @@ export class ScumDb {
   /**
    * Get all rounds for a game
    */
-  public async getRounds(gameId: ObjectID): Promise<ScumDb.RoundDBO[]> {
-    const rounds = await this.db.collection("rounds").find({ gameId: gameId }).toArray();
+  public async getRounds(gameId: string): Promise<ScumDb.RoundDBO[]> {
+    const thisGameId = new ObjectID(gameId);
+    const rounds = await this.db.collection("rounds").find({ gameId: thisGameId }).toArray();
     return rounds;
   }
 
@@ -225,6 +231,7 @@ export namespace ScumDb {
 
   export type HandDBO = {
     playerId: string,
+    readyToPlay: boolean,
     cards: CardDBO[],
     startRank?: number,
     endRank?: number,

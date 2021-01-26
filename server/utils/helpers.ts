@@ -42,6 +42,65 @@ export function playFromHandToPile(round: ScumDb.RoundDBO, cardsToPlay: string[]
 }
 
 /**
+ * Pass cards from one player's hand to another
+ * Also sets the giving player's hand as "ready to play"
+ */
+export function passCards(
+  round: ScumDb.RoundDBO,
+  givingPlayerId: string,
+  receivingPlayerId: string,
+  cards: string[],
+): ScumDb.RoundDBO {
+
+  const { hands } = round;
+
+  let givingHandIndex: number | null = null;
+  let receivingHandIndex: number | null = null;
+
+  for (let i = 0; i < hands.length; i++) {
+    if (hands[i].playerId === givingPlayerId) {
+      givingHandIndex = i;
+    }
+    if (hands[i].playerId === receivingPlayerId) {
+      receivingHandIndex = i;
+    }
+  }
+
+  if (
+    typeof givingHandIndex !== "number"
+    || typeof receivingHandIndex !== "number" ) {
+    throw new Error("unable to determine giver and receiver hands to pass cards");
+  }
+
+  // Create an array to hold the full card objects
+  let cardsPassed: number = 0;
+
+  // Loop through the cards to pass
+  for (const cardAlias of cards) {
+    // For each card to pass, find it in the hand, remove it, and add it to this play
+    for (let i = 0; i < round.hands[givingHandIndex].cards.length; i++) {
+      const cardInHand = round.hands[givingHandIndex].cards[i];
+      if (cardInHand.alias === cardAlias) {
+        round.hands[givingHandIndex].cards.splice(i, 1);
+        round.hands[receivingHandIndex].cards.push(cardInHand);
+        cardsPassed++;
+        break;
+      }
+    }
+  }
+
+  // If we didn't pass the intended number of cards, something went wrong
+  if (cardsPassed !== cards.length) {
+    throw new Error("unable to extract the designated cards from player's hand");
+  }
+
+  // Set the giving player's readyToPlay status now that they have passed cards
+  round.hands[givingHandIndex].readyToPlay = true;
+
+  return round;
+}
+
+/**
  * Moves the cards in the active pile to the discard pile for a given round
  */
 export function clearPile(round: ScumDb.RoundDBO) {
@@ -75,9 +134,6 @@ export function lastPlayShouldClearPile(activePile: ScumDb.TurnDBO[], gameConfig
   }
 
   // If the count to explode the pile is divisible by the number of cards in the current play, keep checking...
-
-  // BIG KNOWN BUG! playing doubles on doubles blows it up no matter what :(
-
   if (explodePileCount % lastPlayedTurn.cards.length === 0) {
     // Grab the rank of the first card as our base rank to match
     let rankToMatch = lastPlayedTurn.cards[0].rank;
@@ -117,7 +173,7 @@ export function lastPlayShouldClearPile(activePile: ScumDb.TurnDBO[], gameConfig
 export function getNextRank(hands: ScumDb.HandDBO[]) {
   let highestRank = 0;
   for (const hand of hands) {
-    if (!!hand.endRank && hand.endRank >= highestRank) {
+    if (typeof hand.endRank === "number" && hand.endRank >= highestRank) {
       highestRank = hand.endRank + 1;
     }
   }
@@ -150,7 +206,7 @@ export function roundShouldEnd(round: ScumDb.RoundDBO): boolean {
   // Count up the hands left in the round without an end rank
   let unrankedPlayers = 0;
   for (const hand of round.hands) {
-    if (!hand.endRank) {
+    if (typeof hand.endRank !== "number") {
       unrankedPlayers++;
     }
   }
@@ -172,7 +228,7 @@ export function getNextHandIndex(hands: ScumDb.HandDBO[], targetHandIndex: numbe
     
     // Check if they are eligible to have a turn now
     const isEligible = !hands[handIndex].hasPassed
-      && !hands[handIndex].endRank
+      && typeof hands[handIndex].endRank !== "number"
       && hands[handIndex].cards.length > 0;
     // If so, return the index of their hand
     if (isEligible) {

@@ -57,7 +57,7 @@ export const GqlGame = new GraphQLObjectType<ScumDb.GameDBO, GraphQlContext>({
       description: "The rounds of this game",
       async resolve({ _id }, _, { scumDb }) {
         try {
-          return await scumDb.getRounds(_id);
+          return await scumDb.getRounds(_id.toHexString());
         } catch(err) {
           throw new GraphQLError(`Unable to get rounds for game ${_id}: ${err}`);
         }

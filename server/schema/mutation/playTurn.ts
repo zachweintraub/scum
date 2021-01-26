@@ -32,7 +32,7 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     if (!game) {
       throw new GraphQLError(`OH NO! No game found with ID ${gameId}`);
     }
-    const rounds = await scumDb.getRounds(game._id);
+    const rounds = await scumDb.getRounds(gameId);
     if (!rounds) {
       throw new GraphQLError(`OH NO! No rounds found for game ${gameId}`);
     }
@@ -68,11 +68,11 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
       console.log(currentRound.hands);
       throw new GraphQLError(`No hand found for player ${playerId}!`);
     }
-    // If there are no cards to play, play them
+    // If there are cards to play, play them
     if (!!cardsToPlay && cardsToPlay.length > 0) {
       // Make the current play
       currentRound = playFromHandToPile(currentRound, cardsToPlay, targetHandIndex, playerId);
-      scumDb.logAction(gameId, `${playerName} throws down: ${cardsToPlay.join(", ")}`);
+      await scumDb.logAction(gameId, `${playerName} throws down: ${cardsToPlay.join(", ")}`);
       // Check to see if that play cleared the pile
       const clearPileReason = lastPlayShouldClearPile(currentRound.activePile, game.gameConfig);
       // If so, do it and log a message
@@ -86,36 +86,38 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
           }
         }
         // Log the action
-        scumDb.logAction(gameId, `${playerName} takes the pile with ${clearPileReason}!`);
+        await scumDb.logAction(gameId, `${playerName} takes the pile with ${clearPileReason}!`);
       }
       if (currentRound.hands[targetHandIndex].cards.length === 0) {
         currentRound.hands[targetHandIndex].endRank = getNextRank(currentRound.hands);
-        scumDb.logAction(gameId, `${playerName} is out of cards!`);
+        await scumDb.logAction(gameId, `${playerName} is out of cards!`);
       }
     // No cards to play, it's a pass
     } else {
       currentRound.hands[targetHandIndex].hasPassed = true;
-      scumDb.logAction(gameId, `${playerName} passes :(`);
+      await scumDb.logAction(gameId, `${playerName} passes :(`);
     }
     // The play has been made, undo the active player's active status
     currentRound.hands[targetHandIndex].isActive = false;
     // If the round should end, do it
-    if (roundShouldEnd(currentRound)) {
+    const thisRoundShouldEnd = roundShouldEnd(currentRound);
+    if (thisRoundShouldEnd) {
       // Make sure all players have a rank
       for (let i = 0; i < currentRound.hands.length; i++) {
-        if (!currentRound.hands[i].endRank) {
+        if (typeof currentRound.hands[i].endRank !== "number") {
           currentRound.hands[i].endRank = getNextRank(currentRound.hands);
         }
       }
       // Set the round's end date
       currentRound.endedAt = new Date().toISOString();
+      await scumDb.logAction(gameId, "the round is over!");
     // Else, the round should continue...
     } else {
       let nextHandIndex = getNextHandIndex(currentRound.hands, targetHandIndex);
 
       // If no one was determined eligible, reset some things and try again
       if (nextHandIndex === -1) {
-        // currentRound = clearPile(currentRound);
+        currentRound = clearPile(currentRound);
         currentRound = resetHasPassedFlags(currentRound);
         nextHandIndex = getNextHandIndex(currentRound.hands, targetHandIndex);
         if (nextHandIndex === -1) {
@@ -140,8 +142,10 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     // Update the round
     try {
       const success = await scumDb.updateRound(currentRound);
+      if (!thisRoundShouldEnd) {
+        await scumDb.logAction(gameId, `it's ${playerName}'s turn!`);
+      }
       publishUpdate(gameId);
-      await scumDb.logAction(gameId, `it's ${playerName}'s turn!`);
       return success;
     } catch (err) {
       throw new GraphQLError(`An error occurred while updating the round for game ${gameId}: ${err}`);

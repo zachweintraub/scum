@@ -39,6 +39,7 @@ export type Hand = {
   hasPassed: boolean;
   startRank: number | null;
   endRank: number | null;
+  readyToPlay: boolean;
 };
 
 export type Turn = {
@@ -89,6 +90,7 @@ export const gameFields = `
         fullName
         alias
       }
+      readyToPlay
       isActive
       hasPassed
       startRank
