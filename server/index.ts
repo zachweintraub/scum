@@ -74,7 +74,7 @@ async function main() {
     const filePath = path.resolve(__dirname + "/../views/index.html");
     let html = fs.readFileSync(filePath, "utf8");
     // Inject the API URL
-    const apiUrl = `https://${req.hostname}${port && req.hostname === "localhost" ? `:${port}` : ""}`;
+    const apiUrl = `${req.protocol}://${req.hostname}${port && req.hostname === "localhost" ? `:${port}` : ""}`;
     html = html.replace(
       "<var></var>",
       `<script>var API_URL = "${apiUrl}/graphql";</script>`,
