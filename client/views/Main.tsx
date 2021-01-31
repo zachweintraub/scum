@@ -1,5 +1,5 @@
 import React, { FC } from "react";
-import { Game } from "./Game";
+import { GameWrapper } from "../views/GameWrapper";
 import { Lobby } from "./Lobby";
 import { Router, Route, Switch } from "react-router-dom";
 import * as history from "history";
@@ -21,7 +21,7 @@ export const Main: FC = () => {
           <Route
             exact
             path="/game/:gameId"
-            component={Game}
+            component={GameWrapper}
           />
         </Switch>
       </Router>

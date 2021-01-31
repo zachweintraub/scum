@@ -1,16 +1,14 @@
-import React, { FC, useContext } from "react";
-import { useParams } from "react-router-dom";
+import React, { FC, useContext, useEffect } from "react";
 import { PlayerContext } from "../contexts/Player";
-import { useMutation, useQuery } from "@apollo/client";
-import { Card, GetGameResponse, GET_GAME, Round } from "../queries/getGame";
-import { SUBSCRIBE_TO_GAME } from "../subscriptions/game";
-import { Portal } from "./Portal";
-import { PlayerHand } from "../components/PlayerHand";
-import { PlayingCard } from "../components/PlayingCard";
+import { useMutation } from "@apollo/client";
+import { Card, Game, Round } from "../queries/getGame";
+import { Portal } from "../views/Portal";
+import { PlayerHand } from "./PlayerHand";
+import { PlayingCard } from "./PlayingCard";
 import { PlayTurnArgs, PLAY_TURN } from "../mutations/playTurn";
-import { OtherPlayers } from "../components/OtherPlayers";
+import { OtherPlayers } from "./OtherPlayers";
 import { StartGameArgs, StartGameResponse, START_GAME } from "../mutations/startGame";
-import { ActionLog } from "../components/ActionLog";
+import { ActionLog } from "./ActionLog";
 import { StartRoundArgs, StartRoundResponse, START_ROUND } from "../mutations/startRound";
 import { PassCardsResponse, PASS_CARDS } from "../mutations/passCards";
 import { PassCardsArgs } from "../../server/schema/mutation/passCards";
@@ -23,25 +21,16 @@ import { LogMessageResponse, SEND_MESSAGE } from "../mutations/sendMessage";
  * ...take the last turn played and display it as the active pile for a fixed number of seconds
  */
 
-type GameViewParams = {
-  gameId?: string;
+type GameArgs = {
+  game: Game;
+  onSubscribe(): void;
 };
 
-export const Game: FC = () => {
-
-  // Pull the game ID out of the URL
-  const { gameId } = useParams<GameViewParams>();
+export const GameView: FC<GameArgs> = ({ game, onSubscribe }) => {
 
   // Bring in the contexts we need
   const playerContext = useContext(PlayerContext);
   //const apolloClientContext = useContext(ApolloClientContext);
-
-  // Query for the whole game
-  const { subscribeToMore, data, loading: gameDataLoading, error: gameDataError } = useQuery<GetGameResponse, { id: string }>(GET_GAME, {
-    variables: {
-      id: gameId!,
-    },
-  });
   
   // Set up the mutation to start the game
   const [startGame, { loading: startGameLoading, error: startGameError }] = useMutation<StartGameResponse, StartGameArgs>(START_GAME);
@@ -58,24 +47,22 @@ export const Game: FC = () => {
   // Set up the mutation that allows the player to send a message in the chat box
   const [sendMessage, { loading: sendMessageLoading, error: sendMessageError }] = useMutation<LogMessageResponse, LogMessageArgs>(SEND_MESSAGE);
 
+  useEffect(() => {
+    onSubscribe();
+  }, []);
+
   // Prompt player info if none exists
   if (!playerContext?.player) {
     return (
       <Portal />
     );
   }
-  
-  // Initiate subscription to the game
-  subscribeToMore({
-    document: SUBSCRIBE_TO_GAME,
-    variables: { id: gameId },
-  });
 
   // Flag to determine whether the game has started
-  const gameHasStarted = !!data?.game.startedAt;
+  const gameHasStarted = game.startedAt;
 
   // This is the current active round pulled from the game
-  const activeRound = data?.game.rounds?.find(r => r.isActive);
+  const activeRound = game.rounds?.find(r => r.isActive);
 
   // This is the hand of the logged in player
   const playerHand = activeRound?.hands.find(h => h.playerId === playerContext?.player?.id);
@@ -137,7 +124,7 @@ export const Game: FC = () => {
   const handleStartGame = async () => {
     await startGame({
       variables: {
-        gameId: data?.game.id!,
+        gameId: game.id,
       },
     });
   }
@@ -146,7 +133,7 @@ export const Game: FC = () => {
   const handleStartNewRound = async () => {
     await startRound({
       variables: {
-        gameId: data!.game.id,
+        gameId: game.id,
       }
     });
   }
@@ -155,7 +142,7 @@ export const Game: FC = () => {
   const handlePlayTurn = async (cards?: Card[]) => {
     const variables: PlayTurnArgs = {
       playerId: playerContext.player!.id,
-      gameId: data!.game.id,
+      gameId: game.id,
       cardsToPlay: cards?.map(c => c.alias),
     };
     await playTurn({ variables });
@@ -166,7 +153,7 @@ export const Game: FC = () => {
     // Just return if conditions aren't right
     if (
       !playerContext.player
-      || !data?.game
+      || !game
       || !activeRound
       || !playerHand
       || typeof playerHand.startRank !== "number"
@@ -187,7 +174,7 @@ export const Game: FC = () => {
     // Pass the cards
     await passCards({
       variables: {
-        gameId: data.game.id,
+        gameId: game.id,
         cardsToPass: cards.map(c => c.alias),
         givingPlayerId: playerContext.player!.id,
         receivingPlayerId,
@@ -197,7 +184,7 @@ export const Game: FC = () => {
 
   // Handler for the action of sending a message in the chat box
   const handleSendMessage = async (message: string) => {
-    if (!data || !playerContext.player) {
+    if (!playerContext.player) {
       return;
     }
 
@@ -205,7 +192,7 @@ export const Game: FC = () => {
     await sendMessage({
       variables: {
         message: messageWithName,
-        gameId: data.game.id,
+        gameId: game.id,
       },
     });
   }
@@ -216,7 +203,7 @@ export const Game: FC = () => {
       return;
     }
     const complimentaryPlayerId = getComplimentaryPlayerId();
-    const complimentaryPlayer = data?.game.players.find(p => p.id === complimentaryPlayerId);
+    const complimentaryPlayer = game.players.find(p => p.id === complimentaryPlayerId);
     const qty = getCardsNeededToPassQty();
     if (!complimentaryPlayer || !qty) {
       return;
@@ -234,7 +221,7 @@ export const Game: FC = () => {
     const handleContinueAction = gameHasStarted
       ? handleStartNewRound
       : handleStartGame;
-    if (data?.game.host.id === playerContext.player?.id) {
+    if (game.host.id === playerContext.player?.id) {
       return (
         <button
           onClick={handleContinueAction}
@@ -247,28 +234,24 @@ export const Game: FC = () => {
   }
 
   const renderPlayersWaitingForGame = () => {
-    if (!data?.game.players) {
+    if (!game.players) {
       return;
     }
     return (
-      <p>players present: {data.game.players.map(p => p.name).join(", ")}</p>
+      <p>players present: {game.players.map(p => p.name).join(", ")}</p>
     );
   }
 
   // This renders the pre-game view (start game button or waiting message)
   const renderInactiveGame = () => {
 
-    if (!data?.game) {
-      return;
-    }
-
     // Establish a variable to hold the previous round
     let previousRound: Round | null = null;
 
     // Loop over the rounds and find that which finished most recently
-    if (data?.game.rounds?.length) {
+    if (game.rounds?.length) {
       // Loop over other rounds to ensure they've all ended and find the most recent
-      for (const round of data.game.rounds) {
+      for (const round of game.rounds) {
         // Throw an error if another is still in progress
         if (!round.endedAt) {
           continue;
@@ -285,13 +268,13 @@ export const Game: FC = () => {
       return (
         <div>
           <ActionLog
-            actions={data.game.actionLog}
+            actions={game.actionLog}
             onSendMessage={handleSendMessage}
             isLoading={sendMessageLoading}
           />
           <OtherPlayers
             hands={previousRound.hands}
-            players={data?.game.players}
+            players={game.players}
           />
           {renderHostActionNeeded()}
         </div>
@@ -302,7 +285,7 @@ export const Game: FC = () => {
     return (
       <div>
         <ActionLog
-          actions={data.game.actionLog}
+          actions={game.actionLog}
           onSendMessage={handleSendMessage}
           isLoading={sendMessageLoading}
         />
@@ -339,8 +322,7 @@ export const Game: FC = () => {
 
   const renderActiveGame = () => {
     if (
-      !data?.game
-      || !playerContext.player
+      !playerContext.player
       || !playerHand
       || !activeRound
       ) {
@@ -349,13 +331,13 @@ export const Game: FC = () => {
     return (
       <div>
         <ActionLog
-            actions={data.game.actionLog}
+            actions={game.actionLog}
             onSendMessage={handleSendMessage}
             isLoading={sendMessageLoading}
           />
         <OtherPlayers
           hands={activeRound.hands}
-          players={data.game.players}
+          players={game.players}
         />
         {renderActivePile()}
         <PlayerHand
@@ -364,7 +346,7 @@ export const Game: FC = () => {
           playToBeat={getPreviousTurn()?.cards}
           onPlayTurn={handlePlayTurn}
           onPassCards={handlePassCards}
-          powerCard={data.game.gameConfig.powerCardAlias}
+          powerCard={game.gameConfig.powerCardAlias}
           isPassingHighCards={isPassingHighCards}
           cardsNeededToPass={getCardsNeededToPassQty()}
         />
@@ -375,8 +357,7 @@ export const Game: FC = () => {
 
   // Return a loading message while a query/mutation is in progress
   if (
-    gameDataLoading 
-    || startGameLoading
+    startGameLoading
     || playTurnLoading
     || startRoundLoading
     || passCardsLoading
@@ -386,8 +367,7 @@ export const Game: FC = () => {
 
   // Return a message if the turn was unable to be played
   if (
-    gameDataError
-    || playTurnError
+    playTurnError
     || startGameError
     || startRoundError
     || passCardsError
@@ -395,18 +375,12 @@ export const Game: FC = () => {
     return <p>An error occurred...</p>;
   }
 
-  // If the game data exists...
-  if (!data || !data.game) {
-    // If none of the above and still no data, something is definitely wrong
-    return <p>something has gone terribly wrong...</p>;
-  }
-
   return (
     <>
       <h3
         className="gameName"
       >
-        {data.game.name}
+        {game.name}
       </h3>
       {
         activeRound
