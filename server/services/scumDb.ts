@@ -147,7 +147,7 @@ export class ScumDb {
   /**
    * Add an action to a game's action log 
    */
-  public async logAction(gameId: string, message: string): Promise<boolean> {
+  public async logAction(gameId: string, message: string): Promise<ScumDb.ActionLogItemDBO> {
     if (!gameId || !message) {
       throw new Error("Cannot log an action without both a game ID and a message");
     }
@@ -162,7 +162,7 @@ export class ScumDb {
       { _id: thisGameId },
       { $push: { actionLog: action } },
     );
-    return true;
+    return action;
   }
 
   /**

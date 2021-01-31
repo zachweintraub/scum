@@ -1,13 +1,14 @@
-import { GraphQLBoolean, GraphQLError, GraphQLFieldConfig, GraphQLNonNull, GraphQLString } from "graphql";
+import { GraphQLError, GraphQLFieldConfig, GraphQLNonNull, GraphQLString } from "graphql";
 import { GraphQlContext } from "../..";
+import { ActionLogItem } from "../types/actionLogItem";
 
-type Args = {
+export type LogMessageArgs = {
   gameId: string;
   message: string;
 };
 
-export const logMessage: GraphQLFieldConfig<null, GraphQlContext, Args> = {
-  type: new GraphQLNonNull(GraphQLBoolean),
+export const logMessage: GraphQLFieldConfig<null, GraphQlContext, LogMessageArgs> = {
+  type: new GraphQLNonNull(ActionLogItem),
   description: "Logs a message in the game's action log",
   args: {
     gameId: {
@@ -21,9 +22,9 @@ export const logMessage: GraphQLFieldConfig<null, GraphQlContext, Args> = {
   },
   async resolve(_, { gameId, message }, { scumDb, publishUpdate }) {
     try {
-      const success = await scumDb.logAction(gameId, message);
+      const action = await scumDb.logAction(gameId, message);
       publishUpdate(gameId);
-      return success;
+      return action;
     } catch (err) {
       throw new GraphQLError(`Unable to create new user: ${err}`);
     }

@@ -14,6 +14,8 @@ import { ActionLog } from "../components/ActionLog";
 import { StartRoundArgs, StartRoundResponse, START_ROUND } from "../mutations/startRound";
 import { PassCardsResponse, PASS_CARDS } from "../mutations/passCards";
 import { PassCardsArgs } from "../../server/schema/mutation/passCards";
+import { LogMessageArgs } from "../../server/schema/mutation/logAction";
+import { LogMessageResponse, SEND_MESSAGE } from "../mutations/sendMessage";
 
 /**
  * TODO: Idea for pausing on cards played before clearing the active pile...
@@ -52,6 +54,9 @@ export const Game: FC = () => {
 
   // Set up the mutation that allows one player to pass cards to another
   const [passCards, { loading: passCardsLoading, error: passCardsError }] = useMutation<PassCardsResponse, PassCardsArgs>(PASS_CARDS);
+
+  // Set up the mutation that allows the player to send a message in the chat box
+  const [sendMessage, { loading: sendMessageLoading, error: sendMessageError }] = useMutation<LogMessageResponse, LogMessageArgs>(SEND_MESSAGE);
 
   // Prompt player info if none exists
   if (!playerContext?.player) {
@@ -190,6 +195,21 @@ export const Game: FC = () => {
     })
   }
 
+  // Handler for the action of sending a message in the chat box
+  const handleSendMessage = async (message: string) => {
+    if (!data || !playerContext.player) {
+      return;
+    }
+
+    const messageWithName = `${playerContext.player.name}: ${message}`;
+    await sendMessage({
+      variables: {
+        message: messageWithName,
+        gameId: data.game.id,
+      },
+    });
+  }
+
   // Gets a message to display under the player's hand if they need to trade cards
   const renderPassCardsMessage = () => {
     if (!playerHand) {
@@ -238,6 +258,10 @@ export const Game: FC = () => {
   // This renders the pre-game view (start game button or waiting message)
   const renderInactiveGame = () => {
 
+    if (!data?.game) {
+      return;
+    }
+
     // Establish a variable to hold the previous round
     let previousRound: Round | null = null;
 
@@ -257,14 +281,18 @@ export const Game: FC = () => {
     }
 
     // If a previous round was identified, return this...
-    if (data?.game && previousRound) {
+    if (previousRound) {
       return (
         <div>
+          <ActionLog
+            actions={data.game.actionLog}
+            onSendMessage={handleSendMessage}
+            isLoading={sendMessageLoading}
+          />
           <OtherPlayers
             hands={previousRound.hands}
             players={data?.game.players}
           />
-          <ActionLog actions={data.game.actionLog} />
           {renderHostActionNeeded()}
         </div>
       );
@@ -273,6 +301,11 @@ export const Game: FC = () => {
     // Otherwise, return this
     return (
       <div>
+        <ActionLog
+          actions={data.game.actionLog}
+          onSendMessage={handleSendMessage}
+          isLoading={sendMessageLoading}
+        />
         {renderPlayersWaitingForGame()}
         {renderHostActionNeeded()}
       </div>
@@ -315,11 +348,15 @@ export const Game: FC = () => {
     }
     return (
       <div>
+        <ActionLog
+            actions={data.game.actionLog}
+            onSendMessage={handleSendMessage}
+            isLoading={sendMessageLoading}
+          />
         <OtherPlayers
           hands={activeRound.hands}
           players={data.game.players}
         />
-        <ActionLog actions={data.game.actionLog} />
         {renderActivePile()}
         <PlayerHand
           player={playerContext.player}
