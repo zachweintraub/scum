@@ -68,6 +68,10 @@ async function main() {
   const httpServer = createServer(app);
   server.installSubscriptionHandlers(httpServer);
 
+  app.get("/memory", (req, res) => {
+    console.log(process.memoryUsage());
+    res.send(200);
+  })
   app.use(express.static(path.resolve(__dirname, "../public")));
   app.use((req, res) => {
     // Grab the HTML
