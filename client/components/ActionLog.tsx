@@ -31,7 +31,8 @@ export const ActionLog: FC<ActionLogProps> = ({
     setNewMessage(event.target.value);
   };
 
-  const handleClickSendMessage = () => {
+  const handleClickSendMessage = (event: React.SyntheticEvent) => {
+    event.preventDefault();
     onSendMessage(newMessage);
     setNewMessage("");
   }
@@ -49,16 +50,20 @@ export const ActionLog: FC<ActionLogProps> = ({
         {actions.map(renderMessage)}
         <div ref={messagesEndRef}/>
       </div>
-      <input
-        onChange={handleChangeNewMessage}
-        value={newMessage}
-      />
-      <button
-        onClick={handleClickSendMessage}
-        disabled={isLoading}
+      <form
+        onSubmit={handleClickSendMessage}
       >
-        Send
-      </button>
+        <input
+          onChange={handleChangeNewMessage}
+          value={newMessage}
+        />
+        <button
+          type="submit"
+          disabled={isLoading}
+        >
+          Send
+        </button>
+      </form>
     </>
   );
 };
