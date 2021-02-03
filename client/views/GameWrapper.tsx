@@ -5,7 +5,7 @@ import { useQuery } from "@apollo/client";
 import { GetGameResponse, GET_GAME } from "../queries/getGame";
 import { SUBSCRIBE_TO_GAME } from "../subscriptions/game";
 import { Portal } from "./Portal";
-import { GameView } from "../components/GameView";
+import { GameView } from "./GameView";
 
 /**
  * TODO: Idea for pausing on cards played before clearing the active pile...
@@ -69,6 +69,7 @@ export const GameWrapper: FC = () => {
   return (
     <GameView
       game={data.game}
+      player={playerContext.player}
       onSubscribe={handleSubscribe}
     />
   );

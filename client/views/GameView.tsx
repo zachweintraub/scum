@@ -1,14 +1,13 @@
-import React, { FC, useContext, useEffect } from "react";
-import { PlayerContext } from "../contexts/Player";
+import React, { FC, useEffect } from "react";
+import { Player } from "../contexts/Player";
 import { useMutation } from "@apollo/client";
 import { Card, Game, Round } from "../queries/getGame";
-import { Portal } from "../views/Portal";
-import { PlayerHand } from "./PlayerHand";
-import { PlayingCard } from "./PlayingCard";
+import { PlayerHand } from "../components/PlayerHand";
+import { PlayingCard } from "../components/PlayingCard";
 import { PlayTurnArgs, PLAY_TURN } from "../mutations/playTurn";
-import { OtherPlayers } from "./OtherPlayers";
+import { OtherPlayers } from "../components/OtherPlayers";
 import { StartGameArgs, StartGameResponse, START_GAME } from "../mutations/startGame";
-import { ActionLog } from "./ActionLog";
+import { ActionLog } from "../components/ActionLog";
 import { StartRoundArgs, StartRoundResponse, START_ROUND } from "../mutations/startRound";
 import { PassCardsResponse, PASS_CARDS } from "../mutations/passCards";
 import { PassCardsArgs } from "../../server/schema/mutation/passCards";
@@ -22,14 +21,13 @@ import { LogMessageResponse, SEND_MESSAGE } from "../mutations/sendMessage";
  */
 
 type GameArgs = {
+  player: Player;
   game: Game;
   onSubscribe(): void;
 };
 
-export const GameView: FC<GameArgs> = ({ game, onSubscribe }) => {
+export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
 
-  // Bring in the contexts we need
-  const playerContext = useContext(PlayerContext);
   //const apolloClientContext = useContext(ApolloClientContext);
   
   // Set up the mutation to start the game
@@ -51,13 +49,6 @@ export const GameView: FC<GameArgs> = ({ game, onSubscribe }) => {
     onSubscribe();
   }, []);
 
-  // Prompt player info if none exists
-  if (!playerContext?.player) {
-    return (
-      <Portal />
-    );
-  }
-
   // Flag to determine whether the game has started
   const gameHasStarted = game.startedAt;
 
@@ -65,7 +56,7 @@ export const GameView: FC<GameArgs> = ({ game, onSubscribe }) => {
   const activeRound = game.rounds?.find(r => r.isActive);
 
   // This is the hand of the logged in player
-  const playerHand = activeRound?.hands.find(h => h.playerId === playerContext?.player?.id);
+  const playerHand = activeRound?.hands.find(h => h.playerId === player.id);
 
   // True if the player owes high cards
   const isPassingHighCards = !playerHand?.readyToPlay
@@ -141,7 +132,7 @@ export const GameView: FC<GameArgs> = ({ game, onSubscribe }) => {
   // Handler for the action of playing a turn, passed down as a prop
   const handlePlayTurn = async (cards?: Card[]) => {
     const variables: PlayTurnArgs = {
-      playerId: playerContext.player!.id,
+      playerId: player.id,
       gameId: game.id,
       cardsToPlay: cards?.map(c => c.alias),
     };
@@ -152,9 +143,7 @@ export const GameView: FC<GameArgs> = ({ game, onSubscribe }) => {
   const handlePassCards = async (cards: Card[]) => {
     // Just return if conditions aren't right
     if (
-      !playerContext.player
-      || !game
-      || !activeRound
+      !activeRound
       || !playerHand
       || typeof playerHand.startRank !== "number"
       || playerHand.readyToPlay
@@ -176,7 +165,7 @@ export const GameView: FC<GameArgs> = ({ game, onSubscribe }) => {
       variables: {
         gameId: game.id,
         cardsToPass: cards.map(c => c.alias),
-        givingPlayerId: playerContext.player!.id,
+        givingPlayerId: player.id,
         receivingPlayerId,
       }
     })
@@ -184,11 +173,8 @@ export const GameView: FC<GameArgs> = ({ game, onSubscribe }) => {
 
   // Handler for the action of sending a message in the chat box
   const handleSendMessage = async (message: string) => {
-    if (!playerContext.player) {
-      return;
-    }
 
-    const messageWithName = `${playerContext.player.name}: ${message}`;
+    const messageWithName = `${player.name}: ${message}`;
     await sendMessage({
       variables: {
         message: messageWithName,
@@ -221,7 +207,7 @@ export const GameView: FC<GameArgs> = ({ game, onSubscribe }) => {
     const handleContinueAction = gameHasStarted
       ? handleStartNewRound
       : handleStartGame;
-    if (game.host.id === playerContext.player?.id) {
+    if (game.host.id === player.id) {
       return (
         <button
           onClick={handleContinueAction}
@@ -322,8 +308,7 @@ export const GameView: FC<GameArgs> = ({ game, onSubscribe }) => {
 
   const renderActiveGame = () => {
     if (
-      !playerContext.player
-      || !playerHand
+      !playerHand
       || !activeRound
       ) {
       return;
@@ -341,7 +326,7 @@ export const GameView: FC<GameArgs> = ({ game, onSubscribe }) => {
         />
         {renderActivePile()}
         <PlayerHand
-          player={playerContext.player}
+          player={player}
           hand={playerHand}
           playToBeat={getPreviousTurn()?.cards}
           onPlayTurn={handlePlayTurn}
@@ -371,6 +356,7 @@ export const GameView: FC<GameArgs> = ({ game, onSubscribe }) => {
     || startGameError
     || startRoundError
     || passCardsError
+    || sendMessageError
   ) {
     return <p>An error occurred...</p>;
   }
