@@ -24,7 +24,7 @@ export const ActionLog: FC<ActionLogProps> = ({
   }, [actions]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ block: "end" })
+    messagesEndRef.current?.scrollIntoView({ block: "nearest", inline: "start" });
   }
 
   const handleChangeNewMessage = (event: React.ChangeEvent<HTMLInputElement>) => {
