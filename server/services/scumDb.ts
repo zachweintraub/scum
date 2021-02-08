@@ -185,10 +185,10 @@ export class ScumDb {
   /**
    * Replace an existing round object in the DB
    */
-  public async updateRound(round: ScumDb.RoundDBO): Promise<boolean> {
+  public async updateRound(round: ScumDb.RoundDBO): Promise<ScumDb.RoundDBO> {
     const thisRoundId = round._id;
     await this.db.collection("rounds").replaceOne({ _id: thisRoundId }, round);
-    return true;
+    return round;
   }
 }
 

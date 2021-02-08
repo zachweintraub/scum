@@ -13,6 +13,7 @@ type PlayerHandProps = {
   powerCard: string;
   cardsNeededToPass?: number;
   isPassingHighCards?: boolean;
+  playTurnLoading?: boolean;
 };
 
 export const PlayerHand: FC<PlayerHandProps> = ({
@@ -22,6 +23,7 @@ export const PlayerHand: FC<PlayerHandProps> = ({
   playToBeat,
   onPlayTurn,
   onPassCards,
+  playTurnLoading,
   cardsNeededToPass,
   isPassingHighCards,
 }) => {
@@ -126,7 +128,7 @@ export const PlayerHand: FC<PlayerHandProps> = ({
   const playButton = useMemo(() => {
     return (
       <button
-      disabled={!canPlay}
+      disabled={!canPlay || playTurnLoading}
       onClick={handleClickPlay}
       >
         play

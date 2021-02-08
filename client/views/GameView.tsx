@@ -4,7 +4,7 @@ import { useMutation } from "@apollo/client";
 import { Card, Game, Round } from "../queries/getGame";
 import { PlayerHand } from "../components/PlayerHand";
 import { PlayingCard } from "../components/PlayingCard";
-import { PlayTurnArgs, PLAY_TURN } from "../mutations/playTurn";
+import { PlayTurnArgs, PlayTurnResponse, PLAY_TURN } from "../mutations/playTurn";
 import { OtherPlayers } from "../components/OtherPlayers";
 import { StartGameArgs, StartGameResponse, START_GAME } from "../mutations/startGame";
 import { ActionLog } from "../components/ActionLog";
@@ -23,6 +23,7 @@ import { LogMessageResponse, SEND_MESSAGE } from "../mutations/sendMessage";
 type GameArgs = {
   player: Player;
   game: Game;
+  /** Subscribe to the game on mount */
   onSubscribe(): void;
 };
 
@@ -37,13 +38,25 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
   const [startRound, { loading: startRoundLoading, error: startRoundError }] = useMutation<StartRoundResponse, StartRoundArgs>(START_ROUND);
   
   // Set up the mutation that allows a player to play their turn
-  const [playTurn, { loading: playTurnLoading, error: playTurnError }] = useMutation<boolean, PlayTurnArgs>(PLAY_TURN);
+  const [playTurn, { loading: playTurnLoading, error: playTurnError }] = useMutation<PlayTurnResponse, PlayTurnArgs>(PLAY_TURN);
 
   // Set up the mutation that allows one player to pass cards to another
   const [passCards, { loading: passCardsLoading, error: passCardsError }] = useMutation<PassCardsResponse, PassCardsArgs>(PASS_CARDS);
 
   // Set up the mutation that allows the player to send a message in the chat box
-  const [sendMessage, { loading: sendMessageLoading, error: sendMessageError }] = useMutation<LogMessageResponse, LogMessageArgs>(SEND_MESSAGE);
+  const [sendMessage, { loading: sendMessageLoading, error: sendMessageError }] = useMutation<LogMessageResponse, LogMessageArgs>(SEND_MESSAGE, {
+    update(cache, { data }) {
+      const newAction = data?.logAction;
+      cache.modify({
+        id: cache.identify(game),
+        fields: {
+          actionLog(existingActionLog) {
+            return [...existingActionLog, newAction];
+          },
+        },
+      });
+    },
+  });
 
   useEffect(() => {
     onSubscribe();
@@ -91,7 +104,7 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
     }
 
     return complimentaryPlayerId;
-  }
+  };
 
   // Gets the number of cards this player needs to pass
   const getCardsNeededToPassQty = () => {
@@ -109,7 +122,7 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
     return playerHand.startRank === 0 || playerHand.startRank === activeRound.hands.length - 1
       ? 2
       : 1;
-  }
+  };
 
   // Trigger mutation to start the game
   const handleStartGame = async () => {
@@ -118,16 +131,16 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
         gameId: game.id,
       },
     });
-  }
+  };
 
   // Trigger mutation to start a new round
   const handleStartNewRound = async () => {
     await startRound({
       variables: {
         gameId: game.id,
-      }
+      },
     });
-  }
+  };
 
   // Handler for the action of playing a turn, passed down as a prop
   const handlePlayTurn = async (cards?: Card[]) => {
@@ -167,9 +180,9 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
         cardsToPass: cards.map(c => c.alias),
         givingPlayerId: player.id,
         receivingPlayerId,
-      }
-    })
-  }
+      },
+    });
+  };
 
   // Handler for the action of sending a message in the chat box
   const handleSendMessage = async (message: string) => {
@@ -181,7 +194,7 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
         gameId: game.id,
       },
     });
-  }
+  };
 
   // Gets a message to display under the player's hand if they need to trade cards
   const renderPassCardsMessage = () => {
@@ -197,8 +210,8 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
     const message = `you owe your ${qty} ${isPassingHighCards ? "highest" : "least desired"} card${qty > 1 ? "s" : ""} to ${complimentaryPlayer.name}`;
     return (
       <p>{message}</p>
-    )
-  }
+    );
+  };
 
   const renderHostActionNeeded = () => {
     const continueAction = gameHasStarted
@@ -213,11 +226,11 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
           onClick={handleContinueAction}
         >
           {continueAction}
-        </button>);
-
+        </button>
+      );
     }
     return (<p>waiting for host to {continueAction}...</p>);
-  }
+  };
 
   const renderPlayersWaitingForGame = () => {
     if (!game.players) {
@@ -226,7 +239,7 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
     return (
       <p>players present: {game.players.map(p => p.name).join(", ")}</p>
     );
-  }
+  };
 
   // This renders the pre-game view (start game button or waiting message)
   const renderInactiveGame = () => {
@@ -278,9 +291,8 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
         {renderPlayersWaitingForGame()}
         {renderHostActionNeeded()}
       </div>
-    );
-        
-  }
+    );    
+  };
 
   // This renders the active pile by displaying the previous turn or a message
   const renderActivePile = () => {
@@ -297,14 +309,14 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
               <PlayingCard
                 key={`activePileCard${index}`}
                 card={card}
-                />
+              />
             );
           })
           : <p>pile is empty...</p>
         }
       </div>
     );
-  }
+  };
 
   const renderActiveGame = () => {
     if (
@@ -319,7 +331,7 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
             actions={game.actionLog}
             onSendMessage={handleSendMessage}
             isLoading={sendMessageLoading}
-          />
+        />
         <OtherPlayers
           hands={activeRound.hands}
           players={game.players}
@@ -334,16 +346,17 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
           powerCard={game.gameConfig.powerCardAlias}
           isPassingHighCards={isPassingHighCards}
           cardsNeededToPass={getCardsNeededToPassQty()}
+          playTurnLoading={playTurnLoading}
         />
         {!playerHand?.readyToPlay && renderPassCardsMessage()}
       </div>
     );
-  }
+  };
 
   // Return a loading message while a query/mutation is in progress
   if (
     startGameLoading
-    || playTurnLoading
+    //|| playTurnLoading
     || startRoundLoading
     || passCardsLoading
   ) {

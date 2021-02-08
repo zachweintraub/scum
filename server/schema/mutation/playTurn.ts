@@ -1,6 +1,7 @@
-import { GraphQLBoolean, GraphQLError, GraphQLFieldConfig, GraphQLList, GraphQLNonNull, GraphQLString } from "graphql";
+import { GraphQLError, GraphQLFieldConfig, GraphQLList, GraphQLNonNull, GraphQLString } from "graphql";
 import { GraphQlContext } from "../..";
 import { clearPile, getNextHandIndex, getNextRank, getPlayerName, lastPlayShouldClearPile, playFromHandToPile, resetHasPassedFlags, roundShouldEnd } from "../../utils/helpers";
+import { GqlRound } from "../types/round";
 
 type Args = {
   gameId: string;
@@ -9,7 +10,7 @@ type Args = {
 };
 
 export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
-  type: new GraphQLNonNull(GraphQLBoolean),
+  type: GqlRound,
   description: "Plays a turn in a game",
   args: {
     gameId: {
