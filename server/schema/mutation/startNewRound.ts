@@ -76,7 +76,7 @@ export const startNewRound: GraphQLFieldConfig<null, GraphQlContext, Args> = {
       } else {
         // Loop over the other ranks and call it neutral if not in the top/bottom two
         for (let i = 0; i < allRanks.length; i++) {
-          if (i > 2 && i < allRanks.length - 2) {
+          if (i > 1 && i < allRanks.length - 2) {
             neutralRanks.push(allRanks[i]);
           }
         }

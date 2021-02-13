@@ -346,7 +346,7 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
           powerCard={game.gameConfig.powerCardAlias}
           isPassingHighCards={isPassingHighCards}
           cardsNeededToPass={getCardsNeededToPassQty()}
-          playTurnLoading={playTurnLoading}
+          actionLoading={playTurnLoading || passCardsLoading}
         />
         {!playerHand?.readyToPlay && renderPassCardsMessage()}
       </div>
@@ -358,7 +358,6 @@ export const GameView: FC<GameArgs> = ({ game, player, onSubscribe }) => {
     startGameLoading
     //|| playTurnLoading
     || startRoundLoading
-    || passCardsLoading
   ) {
     return <p>Loading...</p>;
   }
