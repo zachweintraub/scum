@@ -142,9 +142,6 @@ export const playTurn: GraphQLFieldConfig<null, GraphQlContext, Args> = {
     // Update the round
     try {
       const success = await scumDb.updateRound(currentRound);
-      if (!thisRoundShouldEnd) {
-        await scumDb.logAction(gameId, `it's ${playerName}'s turn!`);
-      }
       publishUpdate(gameId);
       return success;
     } catch (err) {
