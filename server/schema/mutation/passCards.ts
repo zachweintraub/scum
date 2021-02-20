@@ -1,6 +1,7 @@
-import { GraphQLBoolean, GraphQLError, GraphQLFieldConfig, GraphQLList, GraphQLNonNull, GraphQLString } from "graphql";
+import { GraphQLError, GraphQLFieldConfig, GraphQLList, GraphQLNonNull, GraphQLString } from "graphql";
 import { GraphQlContext } from "../..";
 import { passCards } from "../../utils/helpers";
+import { GqlRound } from "../types/round";
 
 export type PassCardsArgs = {
   gameId: string;
@@ -10,7 +11,7 @@ export type PassCardsArgs = {
 };
 
 export const passCardsToPlayer: GraphQLFieldConfig<null, GraphQlContext, PassCardsArgs> = {
-  type: new GraphQLNonNull(GraphQLBoolean),
+  type: GqlRound,
   description: "Pass cards from one player to another",
   args: {
     gameId: {

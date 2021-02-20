@@ -8,11 +8,14 @@ type PlayerHandProps = {
   player: Player;
   hand: Hand;
   playToBeat?: Card[];
+  /** Trigger play turn mutation */
   onPlayTurn(cards?: Card[]): void;
+  /** Trigger pass cards mutation */
   onPassCards(cards: Card[]): void;
   powerCard: string;
   cardsNeededToPass?: number;
   isPassingHighCards?: boolean;
+  actionLoading?: boolean;
 };
 
 export const PlayerHand: FC<PlayerHandProps> = ({
@@ -22,6 +25,7 @@ export const PlayerHand: FC<PlayerHandProps> = ({
   playToBeat,
   onPlayTurn,
   onPassCards,
+  actionLoading,
   cardsNeededToPass,
   isPassingHighCards,
 }) => {
@@ -67,7 +71,7 @@ export const PlayerHand: FC<PlayerHandProps> = ({
       // Now that we have the high cards, set them as selected
       setSelectedCards(highCards);
     }
-  }, [readyToPlay, isPassingHighCards])
+  }, [readyToPlay, isPassingHighCards]);
   
   const canPass = useMemo(() => {
     if (!playToBeat || playToBeat.length === 0) {
@@ -112,22 +116,22 @@ export const PlayerHand: FC<PlayerHandProps> = ({
   const handleClickPlay = () => {
     onPlayTurn(selectedCards);
     setSelectedCards([]);
-  }
+  };
   
   const handleClickPass = () => {
     onPlayTurn();
-  }
+  };
   
   const handleClickPassCards = () => {
     onPassCards(selectedCards);
     setSelectedCards([]);
-  }
+  };
   
   const playButton = useMemo(() => {
     return (
       <button
-      disabled={!canPlay}
-      onClick={handleClickPlay}
+        disabled={!canPlay || actionLoading}
+        onClick={handleClickPlay}
       >
         play
       </button>
@@ -137,8 +141,8 @@ export const PlayerHand: FC<PlayerHandProps> = ({
   const passButton = useMemo(() => {
     return (
       <button
-      disabled={!canPass}
-      onClick={handleClickPass}
+        disabled={!canPass}
+        onClick={handleClickPass}
       >
         pass
       </button>
@@ -153,7 +157,7 @@ export const PlayerHand: FC<PlayerHandProps> = ({
       >
         pass card(s)
       </button>
-    )
+    );
   }, [canPassToPlayer]);
   
   const handleSelectCard = (card: Card) => {
@@ -163,7 +167,7 @@ export const PlayerHand: FC<PlayerHandProps> = ({
       const newSelectedCards = [...selectedCards, card];
       setSelectedCards(newSelectedCards);
     }
-  }
+  };
 
   const handleDeselectCard = (targetCard: Card) => {
     const canDeselect = (isActive && readyToPlay)
@@ -179,7 +183,7 @@ export const PlayerHand: FC<PlayerHandProps> = ({
       }
       setSelectedCards(newSelectedCards);
     }
-  }
+  };
 
   const renderCards = (cards: Card[]) => {
     return cards.map((card, index) => (
@@ -191,10 +195,10 @@ export const PlayerHand: FC<PlayerHandProps> = ({
         onDeselectCard={handleDeselectCard}
       />
     ));
-  }
+  };
 
   if (!hand?.cards) {
-    return <p>There should be cards here...</p>
+    return <p>There should be cards here...</p>;
   }
   return (
     <>
@@ -209,7 +213,7 @@ export const PlayerHand: FC<PlayerHandProps> = ({
   );
 };
 
-// Function to sort the player's cards from low to high
+/** Function to sort the player's cards from low to high */
 function getSortedCards(cards: Card[]) {
   return cards.slice().sort((a, b) => {
     return a.rank - b.rank;
