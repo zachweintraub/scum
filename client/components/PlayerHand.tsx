@@ -32,7 +32,7 @@ export const PlayerHand: FC<PlayerHandProps> = ({
 
   const { isActive, readyToPlay } = hand;
 
-  const cards = getSortedCards(hand.cards);
+  const cards = getSortedCards(hand.cards, powerCard);
 
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
 
@@ -214,8 +214,14 @@ export const PlayerHand: FC<PlayerHandProps> = ({
 };
 
 /** Function to sort the player's cards from low to high */
-function getSortedCards(cards: Card[]) {
+function getSortedCards(cards: Card[], powerCardAlias: string) {
   return cards.slice().sort((a, b) => {
+    if (a.alias === powerCardAlias) {
+      return 1;
+    }
+    if (b.alias === powerCardAlias) {
+      return -1;
+    }
     return a.rank - b.rank;
   });
 }
